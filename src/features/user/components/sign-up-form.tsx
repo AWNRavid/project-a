@@ -35,34 +35,37 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 
-const loginSchema = z.object({
+const signUpSchema = z.object({
   email: z.string().min(1, "Email is required").email({
     message: "Please enter a valid email",
   }),
+  name: z.string().min(1, "Name is required"),
   password: z.string().min(1, "Password is required"),
 });
 
-type LoginFormValues = z.infer<typeof loginSchema>;
+type SignUpFormValues = z.infer<typeof signUpSchema>;
 
-export function LoginForm({
+export function SignUpForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
 
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+  const form = useForm<SignUpFormValues>({
+    resolver: zodResolver(signUpSchema),
     defaultValues: {
       email: "",
+      name: "",
       password: "",
     },
   });
 
-  const loginMutation = useMutation({
-    mutationFn: async (data: LoginFormValues) => {
-      const result = await authClient.signIn.email({
+  const signUpMutation = useMutation({
+    mutationFn: async (data: SignUpFormValues) => {
+      const result = await authClient.signUp.email({
         email: data.email,
+        name: data.name,
         password: data.password,
         callbackURL: "/dashboard",
       });
@@ -77,19 +80,19 @@ export function LoginForm({
       router.push("/dashboard");
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to login");
+      toast.error(error.message || "Failed to sign up");
     },
   });
 
-  const onSubmit = (data: LoginFormValues) => {
-    loginMutation.mutate(data);
+  const onSubmit = (data: SignUpFormValues) => {
+    signUpMutation.mutate(data);
   };
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle>Login to your account</CardTitle>
+          <CardTitle>Create new account</CardTitle>
           <CardDescription>
             Enter your email below to login to your account
           </CardDescription>
@@ -105,6 +108,19 @@ export function LoginForm({
                     <FormLabel>Email</FormLabel>
                     <FormControl>
                       <Input type="email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input type="text" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -147,26 +163,23 @@ export function LoginForm({
               <Button
                 type="submit"
                 className="w-full"
-                disabled={loginMutation.isPending}
+                disabled={signUpMutation.isPending}
               >
-                {loginMutation.isPending && (
+                {signUpMutation.isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                {loginMutation.isPending ? "Logging in..." : "Login"}
+                {signUpMutation.isPending
+                  ? "Creating account..."
+                  : "Create account"}
               </Button>
             </form>
           </Form>
         </CardContent>
       </Card>
-
       <div className="text-sm text-gray-500">
-        Click here
-        <Link
-          href={"/sign-up"}
-          className="hover:text-sky-400 hover:transition-all"
-        >
-          {" "}
-          to sign up
+        Already have an account?{" "}
+        <Link href="/login" className="hover:text-sky-400 hover:transition-all">
+          Log in
         </Link>
       </div>
     </div>

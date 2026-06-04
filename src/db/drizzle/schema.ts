@@ -5,6 +5,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 import { v7 as uuidv7 } from "uuid";
@@ -90,6 +91,7 @@ export const verificationTable = pgTable(
 export const userRelations = relations(userTable, ({ many }) => ({
   sessions: many(sessionTable),
   accounts: many(accountTable),
+  workspaceMemberships: many(workspaceMemberTable),
 }));
 
 export const sessionRelations = relations(sessionTable, ({ one }) => ({
@@ -106,6 +108,61 @@ export const accountRelations = relations(accountTable, ({ one }) => ({
   }),
 }));
 // END OF BETTER-AUTH
+
+export const workspaceTable = pgTable("workspace", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+export const workspaceMemberTable = pgTable(
+  "workspace_member",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaceTable.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    role: text("role").notNull(), // "owner" | "admin" | "member"
+    joinedAt: timestamp("joined_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("workspace_member_workspace_user_idx").on(
+      t.workspaceId,
+      t.userId,
+    ),
+    index("workspace_member_user_id_idx").on(t.userId),
+  ],
+);
+
+export const workspaceRelations = relations(workspaceTable, ({ many }) => ({
+  members: many(workspaceMemberTable),
+}));
+
+export const workspaceMemberRelations = relations(
+  workspaceMemberTable,
+  ({ one }) => ({
+    workspace: one(workspaceTable, {
+      fields: [workspaceMemberTable.workspaceId],
+      references: [workspaceTable.id],
+    }),
+    user: one(userTable, {
+      fields: [workspaceMemberTable.userId],
+      references: [userTable.id],
+    }),
+  }),
+);
 
 export const postsTable = pgTable("posts", {
   id: uuid("id").primaryKey().$defaultFn(uuidv7),
