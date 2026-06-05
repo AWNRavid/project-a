@@ -3,7 +3,7 @@ import "../lib/orpc/client.server"; // for pre-rendering ORPC client
 import { Toaster } from "@/components/ui/sonner";
 import TanstackQueryProvider from "@/lib/tanstack-query/provider";
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono, Syne } from "next/font/google";
 import NextTopLoader from "nextjs-toploader";
 
 import "./globals.css";
@@ -16,6 +16,12 @@ const inter = Inter({
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
+});
+
+const syne = Syne({
+  variable: "--font-display",
+  subsets: ["latin"],
+  weight: ["600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -35,7 +41,7 @@ export default function RootLayout({
     <html lang="en">
       <body
         suppressHydrationWarning
-        className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}
+        className={`${inter.variable} ${jetbrainsMono.variable} ${syne.variable} font-sans antialiased`}
       >
         <NextTopLoader />
 
