@@ -15,6 +15,13 @@
       "when": 1772612551205,
       "tag": "0001_blushing_talkback",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788942498586,
+      "tag": "0002_past_xavin",
+      "breakpoints": true
     }
   ]
 }
