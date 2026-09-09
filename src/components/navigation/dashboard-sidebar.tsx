@@ -3,7 +3,7 @@
 import { SideHeader } from "@/components/navigation/side-header";
 import { SideNav, type SidebarItem } from "@/components/navigation/side-nav";
 import { Sidebar, SidebarContent, SidebarRail } from "@/components/ui/sidebar";
-import { HomeIcon } from "lucide-react";
+import { HomeIcon, SettingsIcon } from "lucide-react";
 import * as React from "react";
 
 export function DashboardSidebar({
@@ -17,6 +17,11 @@ export function DashboardSidebar({
           title: "Dashboard",
           url: "/dashboard",
           icon: HomeIcon,
+        },
+        {
+          title: "Settings",
+          url: "/dashboard/settings",
+          icon: SettingsIcon,
         },
       ],
     },
