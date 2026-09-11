@@ -14,12 +14,15 @@ import Link from "next/link";
  * workspace switcher exists.
  */
 export function WorkspaceSettings() {
+  // Client-side fetch of the user's memberships via the oRPC +
+  // TanStack Query stack (same pattern as the posts table).
   const { data, isLoading, error, refetch } = useQuery(
     orpcTanstackQueryUtils.workspace.listWorkspaces.queryOptions({
       input: {},
     }),
   );
 
+  // Placeholder skeleton while the memberships load.
   if (isLoading) {
     return (
       <div className="flex flex-col gap-4">
@@ -29,6 +32,7 @@ export function WorkspaceSettings() {
     );
   }
 
+  // Fetch failed: show the message and offer a retry.
   if (error) {
     return (
       <div className="flex flex-col items-center gap-3 py-12 text-center">
@@ -44,6 +48,9 @@ export function WorkspaceSettings() {
     );
   }
 
+  // Defensive case: users normally cannot reach settings without a
+  // workspace (dashboard layout redirects), but keep the entry point
+  // renderable anyway.
   const workspace = data?.workspaces[0];
 
   if (!workspace) {

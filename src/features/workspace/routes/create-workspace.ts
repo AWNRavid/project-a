@@ -16,8 +16,13 @@ import { ORPCError } from "@orpc/server";
 import { v7 as uuidv7 } from "uuid";
 import * as z from "zod";
 
+// Postgres error code raised when an INSERT breaks a UNIQUE
+// constraint — used to detect slug collisions and retry.
 const UNIQUE_CONSTRAINT_ERROR_CODE = "23505";
 
+// Name is required; the logo is optional and uploaded only when sent.
+// Validation errors are returned to the client before the handler
+// runs.
 const createWorkspaceSchema = z.object({
   name: workspaceNameSchema,
   logo: workspaceLogoSchema.optional(),
@@ -45,14 +50,22 @@ export const createWorkspace = authProcedure
     const user = requireUser(context.user);
     const db = createDrizzleConnection();
 
+    // Generate the ID up front so the logo can land in its final
+    // storage location before any database write happens.
     const workspaceId = uuidv7();
+    // Upload happens outside the transaction: S3 I/O in a DB
+    // transaction would hold the connection open for nothing.
     const logoPath = input.logo
       ? await uploadWorkspaceLogo(workspaceId, input.logo)
       : null;
 
     try {
+      // Try each slug candidate in order until an insert succeeds;
+      // the DB's unique constraint is the source of truth.
       for (const slug of buildSlugCandidates(input.name)) {
         try {
+          // Atomic so a workspace can never exist without its owner
+          // membership (or vice versa).
           const workspace = await db.transaction(async (tx) => {
             const [createdWorkspace] = await tx
               .insert(workspaceTable)
@@ -64,6 +77,8 @@ export const createWorkspace = authProcedure
               })
               .returning();
 
+            // The creator always becomes the first owner. `satisfies`
+            // keeps the literal tied to the WorkspaceRole union.
             const ownerRole: WorkspaceRole = "owner";
             await tx.insert(workspaceMemberTable).values({
               id: uuidv7(),
@@ -84,6 +99,8 @@ export const createWorkspace = authProcedure
         }
       }
 
+      // All candidates colliding is practically impossible, but the
+      // loop must still terminate with a clear error.
       throw new ORPCError("CONFLICT", {
         message: "Could not find an available slug for this workspace name",
       });

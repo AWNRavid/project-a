@@ -1,7 +1,15 @@
+// Postgres has no hard limit on the slug column, but shorter slugs
+// are friendlier in URLs; names are truncated to fit.
 const MAX_SLUG_LENGTH = 64;
+// Length of the random suffix appended to the base slug for fallbacks.
 const SUFFIX_LENGTH = 6;
+// Total slug attempts per creation: the natural base + this many
+// suffixed candidates before giving up.
 const MAX_CANDIDATES = 5;
+// Used when a name produces an empty slug (e.g. "!!!"). The random
+// suffix then still makes it unique.
 const FALLBACK_BASE = "workspace";
+// URL-safe lowercase alphabet for the collision suffixes.
 const ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789";
 
 /**

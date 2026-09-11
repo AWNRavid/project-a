@@ -19,8 +19,14 @@ import { ORPCError } from "@orpc/server";
 import { and, eq } from "drizzle-orm";
 import * as z from "zod";
 
+// Roles allowed to edit name/logo — the smallest slice of the
+// phase-1 role management work; refine later as more actions appear.
 const EDITABLE_WORKSPACE_ROLES: readonly WorkspaceRole[] = ["owner", "admin"];
 
+// All fields except workspaceId are optional: the route handles
+// rename, logo upload, and logo removal independently. The refines
+// reject contradictory requests (upload + remove) and no-op requests
+// (nothing to change).
 const updateWorkspaceSchema = z
   .object({
     workspaceId: z.string().min(1, "Workspace ID is required"),
@@ -46,6 +52,9 @@ export const updateWorkspace = authProcedure
     const user = requireUser(context.user);
     const db = createDrizzleConnection();
 
+    // Authorization: look up the caller's membership in this
+    // workspace. No membership or a review-only role is forbidden;
+    // non-members get the same FORBIDDEN (no existence leak).
     const [membership] = await db
       .select({ role: workspaceMemberTable.role })
       .from(workspaceMemberTable)
@@ -63,6 +72,8 @@ export const updateWorkspace = authProcedure
       });
     }
 
+    // Remember the old logo so it can be deleted once the new one is
+    // safely persisted.
     const [existingWorkspace] = await db
       .select({ logo: workspaceTable.logo })
       .from(workspaceTable)
@@ -73,11 +84,16 @@ export const updateWorkspace = authProcedure
     }
 
     const shouldRemoveLogo = input.removeLogo === true;
+    // Upload the replacement before the DB update; if the update
+    // fails the catch below cleans this upload up.
     const newLogoPath = input.logo
       ? await uploadWorkspaceLogo(input.workspaceId, input.logo)
       : null;
 
     try {
+      // Only apply the fields actually requested: name is included
+      // when provided, logo is touched when a file arrives or removal
+      // was requested (null clears the column).
       const [workspace] = await db
         .update(workspaceTable)
         .set({
@@ -104,6 +120,7 @@ export const updateWorkspace = authProcedure
         );
       }
 
+      // Return the fresh row plus a ready-to-use logo URL.
       return { ...workspace, logoUrl: await getFileUrl(workspace.logo) };
     } catch (error) {
       // Roll back the uploaded logo when the update failed.

@@ -19,7 +19,9 @@ export default async function AdminLayout({
     redirect("/");
   }
 
-  // Users without a workspace are sent to onboarding first.
+  // Users without a workspace are sent to onboarding first. A cheap
+  // EXIST-style check (limit 1); membership implies the workspace
+  // exists because of the foreign keys.
   const [membership] = await db
     .select({ id: workspaceMemberTable.id })
     .from(workspaceMemberTable)
@@ -30,6 +32,8 @@ export default async function AdminLayout({
     redirect("/onboarding");
   }
 
+  // Dashboard shell: fixed sidebar next to a scrollable main area
+  // with the top navbar.
   return (
     <SidebarProvider>
       <DashboardSidebar />

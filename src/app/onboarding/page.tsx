@@ -1,3 +1,5 @@
+// Onboarding: the first stop after login for users who do not belong
+// to any workspace yet.
 import { db } from "@/db/drizzle/connection";
 import { workspaceMemberTable } from "@/db/drizzle/schema";
 import { authGuard } from "@/features/user/guards/auth-guard";
@@ -7,13 +9,16 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 export default async function OnboardingPage() {
+  // Anonymous visitors go back to the landing page.
   const [session, error] = await authGuard();
 
   if (error || !session) {
     redirect("/");
   }
 
-  // Users who already belong to a workspace skip onboarding.
+  // Users who already belong to a workspace skip onboarding. A
+  // cheap EXIST-style check (limit 1) is enough; memberships cascade
+  // from the workspace, so one row means at least one workspace.
   const [membership] = await db
     .select({ id: workspaceMemberTable.id })
     .from(workspaceMemberTable)
@@ -24,8 +29,11 @@ export default async function OnboardingPage() {
     redirect("/dashboard");
   }
 
+  // Full-screen dark layout (matching the landing page) with the
+  // product link on top and the centered creation form below.
   return (
     <div className="flex min-h-svh w-full flex-col items-center justify-center gap-8 bg-[#0a0e1a] px-4 py-16">
+      {/* Brand mark links back to the marketing home. */}
       <Link
         href="/"
         className="text-xl font-bold text-white"

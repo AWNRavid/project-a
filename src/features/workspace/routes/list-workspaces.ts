@@ -16,6 +16,8 @@ export const listWorkspaces = authProcedure.handler(async ({ context }) => {
   const user = requireUser(context.user);
   const db = createDrizzleConnection();
 
+  // Join through the membership table so only workspaces the user
+  // belongs to are returned; role comes from the membership row.
   const memberships = await db
     .select({
       id: workspaceTable.id,
@@ -33,6 +35,9 @@ export const listWorkspaces = authProcedure.handler(async ({ context }) => {
     .where(eq(workspaceMemberTable.userId, user.id))
     .orderBy(asc(workspaceTable.createdAt));
 
+  // Parse roles at the boundary and resolve logo URLs. A role the
+  // app does not know means corrupted data — fail loudly instead of
+  // silently skipping memberships.
   const workspaces = await Promise.all(
     memberships.map(async (membership) => {
       const role = parseWorkspaceRole(membership.role);
@@ -47,6 +52,8 @@ export const listWorkspaces = authProcedure.handler(async ({ context }) => {
         name: membership.name,
         slug: membership.slug,
         logo: membership.logo,
+        // Resolved into a fetched-able URL (public bucket = direct
+        // URL) so clients never need to understand storage paths.
         logoUrl: await getFileUrl(membership.logo),
         role,
         createdAt: membership.createdAt,

@@ -113,6 +113,10 @@ export const workspaceTable = pgTable("workspace", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
+  // Full S3 storage path of the workspace logo
+  // ("data/workspace/<id>/logo-<timestamp>.webp"), nullable until the
+  // owner uploads one. Storing the path (not the URL) keeps the
+  // scheme endpoint-agnostic; URLs are resolved via getFileUrl.
   logo: text("logo"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

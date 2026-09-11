@@ -1,7 +1,11 @@
 import { compressImageWebp } from "@/lib/media-converter";
 import { deleteFile, StorageBucket, uploadFile } from "@/lib/s3-storage";
 
+// Logos render as small avatars (16-64px); 256px covers retina-scale
+// display while staying economical in storage/bandwidth.
 const WORKSPACE_LOGO_WIDTH = 256;
+// Extra hard cap applied to the already-compressed WebP so even very
+// busy source images stay tiny.
 const WORKSPACE_LOGO_MAX_COMPRESSED_BYTES = 50 * 1024; // 50 KB after compression
 
 /**
