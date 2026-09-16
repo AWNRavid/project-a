@@ -1,7 +1,16 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { InviteMemberDialog } from "@/features/workspace/components/invite-member-dialog";
+import { PendingInvitesList } from "@/features/workspace/components/pending-invites-list";
 import { WorkspaceSettingsForm } from "@/features/workspace/components/workspace-settings-form";
 import { orpcTanstackQueryUtils } from "@/lib/orpc/client";
 import { useQuery } from "@tanstack/react-query";
@@ -70,5 +79,26 @@ export function WorkspaceSettings() {
     );
   }
 
-  return <WorkspaceSettingsForm workspace={workspace} />;
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Name + logo editor for the active workspace. */}
+      <WorkspaceSettingsForm workspace={workspace} />
+
+      {/* Team section: invite dialog + pending invitation rows. */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Team</CardTitle>
+          <CardDescription>
+            Invite people by email and manage pending invitations.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          {/* Owner/admin-only actions; the server enforces the roles. */}
+          <InviteMemberDialog workspaceId={workspace.id} />
+          {/* Live list of pending invitations with resend/cancel. */}
+          <PendingInvitesList workspaceId={workspace.id} />
+        </CardContent>
+      </Card>
+    </div>
+  );
 }

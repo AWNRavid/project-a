@@ -1,22 +1,20 @@
 import { createDrizzleConnection } from "@/db/drizzle/connection";
-import { workspaceMemberTable, workspaceTable } from "@/db/drizzle/schema";
+import { workspaceTable } from "@/db/drizzle/schema";
 import {
   workspaceLogoSchema,
   workspaceNameSchema,
 } from "@/features/workspace/schemas";
-import {
-  parseWorkspaceRole,
-  type WorkspaceRole,
-} from "@/features/workspace/types";
+import type { WorkspaceRole } from "@/features/workspace/types";
 import {
   deleteWorkspaceLogo,
   uploadWorkspaceLogo,
 } from "@/features/workspace/utils/logo";
+import { requireWorkspaceRole } from "@/features/workspace/utils/workspace-access";
 import { authProcedure } from "@/lib/orpc/auth/auth-procedure";
 import { requireUser } from "@/lib/orpc/auth/require-user";
 import { getFileUrl } from "@/lib/s3-storage";
 import { ORPCError } from "@orpc/server";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import * as z from "zod";
 
 // Roles allowed to edit name/logo — the smallest slice of the
@@ -52,25 +50,14 @@ export const updateWorkspace = authProcedure
     const user = requireUser(context.user);
     const db = createDrizzleConnection();
 
-    // Authorization: look up the caller's membership in this
-    // workspace. No membership or a review-only role is forbidden;
-    // non-members get the same FORBIDDEN (no existence leak).
-    const [membership] = await db
-      .select({ role: workspaceMemberTable.role })
-      .from(workspaceMemberTable)
-      .where(
-        and(
-          eq(workspaceMemberTable.workspaceId, input.workspaceId),
-          eq(workspaceMemberTable.userId, user.id),
-        ),
-      );
-
-    const role = membership ? parseWorkspaceRole(membership.role) : null;
-    if (!role || !EDITABLE_WORKSPACE_ROLES.includes(role)) {
-      throw new ORPCError("FORBIDDEN", {
-        message: "You do not have permission to edit this workspace",
-      });
-    }
+    // Authorization via the shared access helper: only owner/admin
+    // may rename a workspace or change its logo (rule kept in one
+    // place for every workspace route).
+    await requireWorkspaceRole(
+      user.id,
+      input.workspaceId,
+      EDITABLE_WORKSPACE_ROLES,
+    );
 
     // Remember the old logo so it can be deleted once the new one is
     // safely persisted.
