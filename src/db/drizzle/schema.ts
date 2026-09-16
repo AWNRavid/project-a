@@ -151,9 +151,64 @@ export const workspaceMemberTable = pgTable(
   ],
 );
 
+export const workspaceInviteTable = pgTable(
+  "workspace_invite",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaceTable.id, { onDelete: "cascade" }),
+    // Email of the person being invited — may not have an account yet.
+    email: text("email").notNull(),
+    // Role the invitee will get on accept. "owner" invites are
+    // blocked at the route boundary (ownership transfer is not a
+    // phase-1 feature).
+    role: text("role").notNull(), // "owner" | "admin" | "member"
+    // Unguessable lookup key for the /invite/<token> page (crypto
+    // random 32 bytes hex).
+    token: text("token").notNull().unique(),
+    // Who sent the invite; shown ("invited by ...") in the email and
+    // the accept page.
+    invitedById: text("invited_by_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    // When the invite stops being usable; cancels delete the row
+    // entirely, so a short expiry keeps the pending set clean.
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    // One active invite per email per workspace; cancelling an invite
+    // deletes the row, so the index frees the slot for a re-invite.
+    uniqueIndex("workspace_invite_workspace_email_idx").on(
+      t.workspaceId,
+      t.email,
+    ),
+    // Lookups by invitee-joined-time (join user for the inviter name).
+    index("workspace_invite_invited_by_id_idx").on(t.invitedById),
+  ],
+);
+
 export const workspaceRelations = relations(workspaceTable, ({ many }) => ({
   members: many(workspaceMemberTable),
+  invites: many(workspaceInviteTable),
 }));
+
+export const workspaceInviteRelations = relations(
+  workspaceInviteTable,
+  ({ one }) => ({
+    workspace: one(workspaceTable, {
+      fields: [workspaceInviteTable.workspaceId],
+      references: [workspaceTable.id],
+    }),
+    inviter: one(userTable, {
+      fields: [workspaceInviteTable.invitedById],
+      references: [userTable.id],
+    }),
+  }),
+);
 
 export const workspaceMemberRelations = relations(
   workspaceMemberTable,

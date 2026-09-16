@@ -29,7 +29,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -48,7 +48,10 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const router = useRouter();
+  // Optional ?redirect= target (e.g. an invite link that required
+  // login); falls back to /dashboard when absent.
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect");
   const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<LoginFormValues>({
@@ -64,7 +67,8 @@ export function LoginForm({
       const result = await authClient.signIn.email({
         email: data.email,
         password: data.password,
-        callbackURL: "/dashboard",
+        // Better Auth itself redirects honor the same target.
+        callbackURL: redirectTo ?? "/dashboard",
       });
 
       if (result.error) {
@@ -74,7 +78,11 @@ export function LoginForm({
       return result;
     },
     onSuccess: () => {
-      router.push("/dashboard");
+      // Land on ?redirect= (invite flows) or /dashboard by default.
+      // window.location (not router.push) because the target is a
+      // dynamic string — typed routes only accept route literals —
+      // and a full reload cleanly re-roots the app after login.
+      window.location.assign(redirectTo ?? "/dashboard");
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to login");
