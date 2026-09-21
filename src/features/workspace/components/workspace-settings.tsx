@@ -9,8 +9,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+// Tabs for the Members / Pending invites switch.
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InviteMemberDialog } from "@/features/workspace/components/invite-member-dialog";
+import { MembersList } from "@/features/workspace/components/members-list";
 import { PendingInvitesList } from "@/features/workspace/components/pending-invites-list";
+import { WorkspaceDangerZone } from "@/features/workspace/components/workspace-danger-zone";
 import { WorkspaceSettingsForm } from "@/features/workspace/components/workspace-settings-form";
 import { orpcTanstackQueryUtils } from "@/lib/orpc/client";
 import { useQuery } from "@tanstack/react-query";
@@ -84,21 +88,43 @@ export function WorkspaceSettings() {
       {/* Name + logo editor for the active workspace. */}
       <WorkspaceSettingsForm workspace={workspace} />
 
-      {/* Team section: invite dialog + pending invitation rows. */}
+      {/* Team section: two tabs — members and pending invitations, plus
+          the invite trigger reachable from both tabs. */}
       <Card>
-        <CardHeader>
-          <CardTitle>Team</CardTitle>
-          <CardDescription>
-            Invite people by email and manage pending invitations.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          {/* Owner/admin-only actions; the server enforces the roles. */}
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Team</CardTitle>
+            <CardDescription>
+              Manage members, roles, and invitations.
+            </CardDescription>
+          </div>
+          {/* Owner/admin-only dialog; the server enforces the roles. */}
           <InviteMemberDialog workspaceId={workspace.id} />
-          {/* Live list of pending invitations with resend/cancel. */}
-          <PendingInvitesList workspaceId={workspace.id} />
+        </CardHeader>
+        <CardContent>
+          {/* Tabs switch between the member list and pending invites. */}
+          <Tabs defaultValue="members">
+            <TabsList>
+              <TabsTrigger value="members">Members</TabsTrigger>
+              <TabsTrigger value="invites">Pending invites</TabsTrigger>
+            </TabsList>
+            {/* Members: role management / leave / transfer UI. */}
+            <TabsContent value="members">
+              <MembersList workspaceId={workspace.id} />
+            </TabsContent>
+            {/* Pending invitations with resend/cancel entries. */}
+            <TabsContent value="invites">
+              <PendingInvitesList workspaceId={workspace.id} />
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
+
+      {/* Owner-only destructive block, hidden from the UI for
+          non-owners (the delete route re-checks ownership anyway). */}
+      {workspace.role === "owner" && (
+        <WorkspaceDangerZone workspaceId={workspace.id} />
+      )}
     </div>
   );
 }
