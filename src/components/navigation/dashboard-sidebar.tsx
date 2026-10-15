@@ -5,7 +5,7 @@
 import { SideHeader } from "@/components/navigation/side-header";
 import { SideNav, type SidebarItem } from "@/components/navigation/side-nav";
 import { Sidebar, SidebarContent, SidebarRail } from "@/components/ui/sidebar";
-import { HomeIcon, SettingsIcon } from "lucide-react";
+import { BoxIcon, HomeIcon, SettingsIcon } from "lucide-react";
 import * as React from "react";
 
 export function DashboardSidebar({
@@ -26,6 +26,11 @@ export function DashboardSidebar({
           title: "Settings",
           url: "/dashboard/settings",
           icon: SettingsIcon,
+        },
+        {
+          title: "Posts example",
+          url: "/dashboard/posts",
+          icon: BoxIcon,
         },
       ],
     },
