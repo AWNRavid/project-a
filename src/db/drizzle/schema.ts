@@ -92,6 +92,7 @@ export const userRelations = relations(userTable, ({ many }) => ({
   sessions: many(sessionTable),
   accounts: many(accountTable),
   workspaceMemberships: many(workspaceMemberTable),
+  createdProjects: many(projectTable),
 }));
 
 export const sessionRelations = relations(sessionTable, ({ one }) => ({
@@ -194,6 +195,7 @@ export const workspaceInviteTable = pgTable(
 export const workspaceRelations = relations(workspaceTable, ({ many }) => ({
   members: many(workspaceMemberTable),
   invites: many(workspaceInviteTable),
+  projects: many(projectTable),
 }));
 
 export const workspaceInviteRelations = relations(
@@ -212,7 +214,7 @@ export const workspaceInviteRelations = relations(
 
 export const workspaceMemberRelations = relations(
   workspaceMemberTable,
-  ({ one }) => ({
+  ({ one, many }) => ({
     workspace: one(workspaceTable, {
       fields: [workspaceMemberTable.workspaceId],
       references: [workspaceTable.id],
@@ -222,6 +224,37 @@ export const workspaceMemberRelations = relations(
       references: [userTable.id],
     }),
   }),
+);
+
+export const projectTable = pgTable(
+  "project",
+  {
+    id: uuid("id").primaryKey().$defaultFn(uuidv7),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+    })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", {
+      withTimezone: true,
+    })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    title: text("title").notNull(),
+    description: text("description"),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaceTable.id),
+    createdById: text("created_by_id")
+      .notNull()
+      .references(() => userTable.id),
+    status: text("status").default("active").notNull(),
+    key: text("key").notNull().unique(),
+  },
+  (table) => [
+    uniqueIndex("workspace_project_key_idx").on(table.workspaceId, table.key),
+  ],
 );
 
 export const postsTable = pgTable("posts", {
@@ -240,3 +273,121 @@ export const postsTable = pgTable("posts", {
   title: text("title").notNull(),
   description: text("description"),
 });
+
+export const projectRelations = relations(projectTable, ({ one }) => ({
+  workspace: one(workspaceTable, {
+    fields: [projectTable.workspaceId],
+    references: [workspaceTable.id],
+  }),
+  createdBy: one(userTable, {
+    fields: [projectTable.createdById],
+    references: [userTable.id],
+  }),
+}));
+
+// export const userRelations = relations(userTable, ({ many }) => ({
+//   sessions: many(sessionTable),
+//   accounts: many(accountTable),
+//   workspaceMemberships: many(workspaceMemberTable),
+// }));
+
+// export const userTable = pgTable("user", {
+//   id: text("id").primaryKey(),
+//   name: text("name").notNull(),
+//   email: text("email").notNull().unique(),
+//   emailVerified: boolean("email_verified").default(false).notNull(),
+//   image: text("image"),
+//   createdAt: timestamp("created_at").defaultNow().notNull(),
+//   updatedAt: timestamp("updated_at")
+//     .defaultNow()
+//     .$onUpdate(() => /* @__PURE__ */ new Date())
+//     .notNull(),
+//   role: text("role"),
+//   banned: boolean("banned").default(false),
+//   banReason: text("ban_reason"),
+//   banExpires: timestamp("ban_expires"),
+// });
+
+// export const sessionRelations = relations(sessionTable, ({ one }) => ({
+//   user: one(userTable, {
+//     fields: [sessionTable.userId],
+//     references: [userTable.id],
+//   }),
+// }));
+
+// export const sessionTable = pgTable(
+//   "session",
+//   {
+//     id: text("id").primaryKey(),
+//     expiresAt: timestamp("expires_at").notNull(),
+//     token: text("token").notNull().unique(),
+//     createdAt: timestamp("created_at").defaultNow().notNull(),
+//     updatedAt: timestamp("updated_at")
+//       .$onUpdate(() => /* @__PURE__ */ new Date())
+//       .notNull(),
+//     ipAddress: text("ip_address"),
+//     userAgent: text("user_agent"),
+//     userId: text("user_id")
+//       .notNull()
+//       .references(() => userTable.id, { onDelete: "cascade" }),
+//     impersonatedBy: text("impersonated_by"),
+//   },
+//   (table) => [index("session_userId_idx").on(table.userId)],
+// );
+
+// export const accountTable = pgTable(
+//   "account",
+//   {
+//     id: text("id").primaryKey(),
+//     accountId: text("account_id").notNull(),
+//     providerId: text("provider_id").notNull(),
+//     userId: text("user_id")
+//       .notNull()
+//       .references(() => userTable.id, { onDelete: "cascade" }),
+//     accessToken: text("access_token"),
+//     refreshToken: text("refresh_token"),
+//     idToken: text("id_token"),
+//     accessTokenExpiresAt: timestamp("access_token_expires_at"),
+//     refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+//     scope: text("scope"),
+//     password: text("password"),
+//     createdAt: timestamp("created_at").defaultNow().notNull(),
+//     updatedAt: timestamp("updated_at")
+//       .$onUpdate(() => /* @__PURE__ */ new Date())
+//       .notNull(),
+//   },
+//   (table) => [index("account_userId_idx").on(table.userId)],
+// );
+
+// export const postsTable = pgTable("posts", {
+//   id: uuid("id").primaryKey().$defaultFn(uuidv7),
+//   createdAt: timestamp("created_at", {
+//     withTimezone: true,
+//   })
+//     .notNull()
+//     .defaultNow(),
+//   updatedAt: timestamp("updated_at", {
+//     withTimezone: true,
+//   })
+//     .notNull()
+//     .defaultNow()
+//     .$onUpdate(() => new Date()),
+//   title: text("title").notNull(),
+//   description: text("description"),
+
+// export const postsTable = pgTable("posts", {
+//   id: uuid("id").primaryKey().$defaultFn(uuidv7),
+//   createdAt: timestamp("created_at", {
+//     withTimezone: true,
+//   })
+//     .notNull()
+//     .defaultNow(),
+//   updatedAt: timestamp("updated_at", {
+//     withTimezone: true,
+//   })
+//     .notNull()
+//     .defaultNow()
+//     .$onUpdate(() => new Date()),
+//   title: text("title").notNull(),
+//   description: text("description"),
+// });
