@@ -95,7 +95,7 @@ export function DeleteProjectDialog({
           <Button
             variant="ghost"
             size="icon"
-            onClick={(e) => {
+            onClick={() => {
               handleDeleteClick(project);
             }}
             className="text-blue-600 transition-transform hover:scale-105 hover:text-blue-700"
@@ -121,7 +121,7 @@ export function DeleteProjectDialog({
                 <Button
                   type="button"
                   variant={"outline"}
-                  onClick={(e) => {
+                  onClick={() => {
                     setOpenDialog(false);
                   }}
                 >

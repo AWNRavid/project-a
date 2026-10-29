@@ -1,6 +1,7 @@
 import { createProject } from "./create-project";
 import { deleteProject } from "./delete-project";
 import { getAllProject } from "./get-all-project";
+import { getProject } from "./get-project";
 import { updateProject } from "./update-project";
 
 const projectRouter = {
@@ -8,6 +9,7 @@ const projectRouter = {
   getAllProject,
   updateProject,
   deleteProject,
+  getProject,
 };
 
 export default projectRouter;

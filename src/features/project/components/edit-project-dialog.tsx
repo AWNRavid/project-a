@@ -111,7 +111,7 @@ export function EditProjectDialog({
           <Button
             variant="ghost"
             size="icon"
-            onClick={(e) => {
+            onClick={() => {
               handleEditClick(project);
             }}
             className="text-blue-600 transition-transform hover:scale-105 hover:text-blue-700"
@@ -156,7 +156,7 @@ export function EditProjectDialog({
                 <Button
                   type="button"
                   variant={"outline"}
-                  onClick={(e) => {
+                  onClick={() => {
                     setOpenDialog(false);
                   }}
                 >

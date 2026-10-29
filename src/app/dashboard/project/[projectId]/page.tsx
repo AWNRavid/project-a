@@ -1,3 +1,5 @@
+import { ProjectView } from "@/features/project/components/project-view";
+
 export default async function ProjectPage({
   params,
 }: {
@@ -5,5 +7,9 @@ export default async function ProjectPage({
 }) {
   const { projectId } = await params;
 
-  return <div className="flex flex-col gap-6 p-6">ProjectPage {projectId}</div>;
+  return (
+    <div className="flex flex-col gap-6 p-6">
+      <ProjectView projectId={projectId} />
+    </div>
+  );
 }

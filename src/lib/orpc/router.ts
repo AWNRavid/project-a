@@ -3,6 +3,7 @@
 // client-side API surface (orpcClient.<feature>.<route>), and the
 // exported Router type drives end-to-end type inference.
 import postRouter from "@/features/EXAMPLE-post/routes";
+import issueRouter from "@/features/issue/routes";
 import projectRouter from "@/features/project/routes";
 // Workspace routes (create/list/update) added for the workspace
 // feature.
@@ -12,6 +13,7 @@ export const router = {
   post: postRouter,
   workspace: workspaceRouter,
   project: projectRouter,
+  issue: issueRouter,
 };
 
 // Type export used by clients (React components) and the server-side
