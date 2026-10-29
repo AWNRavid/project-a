@@ -43,6 +43,13 @@
       "when": 1791954939576,
       "tag": "0005_light_scarlet_spider",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792743766618,
+      "tag": "0006_silent_meggan",
+      "breakpoints": true
     }
   ]
 }

@@ -2,6 +2,7 @@ import { relations } from "drizzle-orm";
 import {
   boolean,
   index,
+  integer,
   pgTable,
   text,
   timestamp,
@@ -214,7 +215,7 @@ export const workspaceInviteRelations = relations(
 
 export const workspaceMemberRelations = relations(
   workspaceMemberTable,
-  ({ one, many }) => ({
+  ({ one }) => ({
     workspace: one(workspaceTable, {
       fields: [workspaceMemberTable.workspaceId],
       references: [workspaceTable.id],
@@ -274,13 +275,69 @@ export const postsTable = pgTable("posts", {
   description: text("description"),
 });
 
-export const projectRelations = relations(projectTable, ({ one }) => ({
+export const projectRelations = relations(projectTable, ({ one, many }) => ({
   workspace: one(workspaceTable, {
     fields: [projectTable.workspaceId],
     references: [workspaceTable.id],
   }),
   createdBy: one(userTable, {
     fields: [projectTable.createdById],
+    references: [userTable.id],
+  }),
+  issues: many(issueTable),
+}));
+
+export const issueTable = pgTable(
+  "issue",
+  {
+    id: uuid("id").primaryKey().$defaultFn(uuidv7),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    title: text("title").notNull(),
+    description: text("description"),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projectTable.id, { onDelete: "cascade" }),
+    number: integer("number").notNull(),
+    status: text("status").notNull().default("backlog"),
+    priority: text("priority").notNull().default("no_priority"),
+    assigneeId: text("assignee_id").references(() => userTable.id, {
+      onDelete: "set null",
+    }),
+    order: text("order").notNull().default("0"),
+    dueDate: timestamp("due_date", { withTimezone: true }),
+    createdById: text("created_by_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    index("issue_project_id_idx").on(table.projectId),
+    index("issue_assignee_id_idx").on(table.assigneeId),
+    index("issue_project_status_order_idx").on(
+      table.projectId,
+      table.status,
+      table.order,
+    ),
+    uniqueIndex("issue_project_number_idx").on(table.projectId, table.number),
+  ],
+);
+
+export const issueRelations = relations(issueTable, ({ one }) => ({
+  project: one(projectTable, {
+    fields: [issueTable.projectId],
+    references: [projectTable.id],
+  }),
+  assignee: one(userTable, {
+    fields: [issueTable.assigneeId],
+    references: [userTable.id],
+  }),
+  createdBy: one(userTable, {
+    fields: [issueTable.createdById],
     references: [userTable.id],
   }),
 }));
