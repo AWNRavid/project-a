@@ -50,7 +50,7 @@ import {
   Trash2Icon,
   XIcon,
 } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { IssueDetail, IssuePriority, IssueStatus } from "../types";
 import { CreateIssueDialog } from "./create-issue-dialog";
 import { DeleteIssueDialog } from "./delete-issue-dialog";
@@ -58,6 +58,8 @@ import { EditIssueDialog } from "./edit-issue-dialog";
 import { IssueDetailDialog } from "./issue-detail-dialog";
 import { IssuePriorityBadge } from "./issue-priority-badge";
 import { IssueStatusBadge } from "./issue-status-badge";
+
+type SortDirection = "asc" | "desc" | false;
 
 interface WorkspaceMemberSummary {
   userId: string;
@@ -75,6 +77,28 @@ interface IssueTableProps {
 }
 
 /**
+ * Domain-specific priority severity hierarchy.
+ */
+const priorityOrder: Record<string, number> = {
+  urgent: 4,
+  high: 3,
+  medium: 2,
+  low: 1,
+  no_priority: 0,
+};
+
+/**
+ * Domain-specific status lifecycle hierarchy.
+ */
+const statusOrder: Record<string, number> = {
+  backlog: 0,
+  todo: 1,
+  in_progress: 2,
+  done: 3,
+  cancelled: 4,
+};
+
+/**
  * Data table visualizing, sorting, and filtering project issues using TanStack Table.
  */
 export function IssueTable({
@@ -84,6 +108,8 @@ export function IssueTable({
   isLoading,
   members = [],
 }: IssueTableProps) {
+  "use no memo";
+
   // Filtering states
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 250);
@@ -163,26 +189,46 @@ export function IssueTable({
     setAssigneeFilter("all");
   };
 
+  const getSortDirection = useCallback(
+    (columnId: string): SortDirection => {
+      const sort = sorting.find((s) => s.id === columnId);
+      if (!sort) return false;
+      return sort.desc ? "desc" : "asc";
+    },
+    [sorting],
+  );
+
   const columns = useMemo<ColumnDef<IssueDetail>[]>(
     () => [
       {
         accessorKey: "number",
         id: "number",
         header: ({ column }) => (
-          <SortableHeader column={column}>Key</SortableHeader>
+          <SortableHeader
+            column={column}
+            sortDirection={getSortDirection("number")}
+          >
+            Key
+          </SortableHeader>
         ),
         cell: ({ row }) => (
           <span className="text-muted-foreground font-mono text-xs font-semibold uppercase">
             {row.original.projectKey}-{row.original.number}
           </span>
         ),
-        sortingFn: (rowA, rowB) => rowA.original.number - rowB.original.number,
+        sortingFn: (rowA, rowB) =>
+          Number(rowA.original.number) - Number(rowB.original.number),
       },
       {
         accessorKey: "title",
         id: "title",
         header: ({ column }) => (
-          <SortableHeader column={column}>Title</SortableHeader>
+          <SortableHeader
+            column={column}
+            sortDirection={getSortDirection("title")}
+          >
+            Title
+          </SortableHeader>
         ),
         cell: ({ row }) => (
           <button
@@ -200,34 +246,61 @@ export function IssueTable({
             )}
           </button>
         ),
+        sortingFn: (rowA, rowB) =>
+          rowA.original.title.localeCompare(rowB.original.title),
       },
       {
         accessorKey: "status",
         id: "status",
         header: ({ column }) => (
-          <SortableHeader column={column}>Status</SortableHeader>
+          <SortableHeader
+            column={column}
+            sortDirection={getSortDirection("status")}
+          >
+            Status
+          </SortableHeader>
         ),
         cell: ({ row }) => (
           <IssueStatusBadge status={row.original.status as IssueStatus} />
         ),
+        sortingFn: (rowA, rowB) => {
+          const rankA = statusOrder[rowA.original.status] ?? 0;
+          const rankB = statusOrder[rowB.original.status] ?? 0;
+          return rankA - rankB;
+        },
       },
       {
         accessorKey: "priority",
         id: "priority",
         header: ({ column }) => (
-          <SortableHeader column={column}>Priority</SortableHeader>
+          <SortableHeader
+            column={column}
+            sortDirection={getSortDirection("priority")}
+          >
+            Priority
+          </SortableHeader>
         ),
         cell: ({ row }) => (
           <IssuePriorityBadge
             priority={row.original.priority as IssuePriority}
           />
         ),
+        sortingFn: (rowA, rowB) => {
+          const rankA = priorityOrder[rowA.original.priority] ?? 0;
+          const rankB = priorityOrder[rowB.original.priority] ?? 0;
+          return rankA - rankB;
+        },
       },
       {
         accessorKey: "assigneeName",
         id: "assignee",
         header: ({ column }) => (
-          <SortableHeader column={column}>Assignee</SortableHeader>
+          <SortableHeader
+            column={column}
+            sortDirection={getSortDirection("assignee")}
+          >
+            Assignee
+          </SortableHeader>
         ),
         cell: ({ row }) => {
           const assigneeName = row.original.assigneeName;
@@ -255,12 +328,25 @@ export function IssueTable({
             </div>
           );
         },
+        sortingFn: (rowA, rowB) => {
+          const nameA = rowA.original.assigneeName || "";
+          const nameB = rowB.original.assigneeName || "";
+          if (!nameA && !nameB) return 0;
+          if (!nameA) return 1;
+          if (!nameB) return -1;
+          return nameA.localeCompare(nameB);
+        },
       },
       {
         accessorKey: "dueDate",
         id: "dueDate",
         header: ({ column }) => (
-          <SortableHeader column={column}>Due Date</SortableHeader>
+          <SortableHeader
+            column={column}
+            sortDirection={getSortDirection("dueDate")}
+          >
+            Due Date
+          </SortableHeader>
         ),
         cell: ({ row }) => {
           const dueDate = row.original.dueDate;
@@ -290,9 +376,22 @@ export function IssueTable({
             </span>
           );
         },
+        sortingFn: (rowA, rowB) => {
+          const timeA = rowA.original.dueDate
+            ? new Date(rowA.original.dueDate).getTime()
+            : 0;
+          const timeB = rowB.original.dueDate
+            ? new Date(rowB.original.dueDate).getTime()
+            : 0;
+          if (!timeA && !timeB) return 0;
+          if (!timeA) return 1;
+          if (!timeB) return -1;
+          return timeA - timeB;
+        },
       },
       {
         id: "actions",
+        enableSorting: false,
         cell: ({ row }) => (
           <div className="flex justify-end">
             <DropdownMenu>
@@ -332,13 +431,14 @@ export function IssueTable({
         ),
       },
     ],
-    [],
+    [getSortDirection],
   );
 
-  // eslint-disable-next-line react-hooks/incompatible-library -- using useRef trick to bypass React Compiler optimization
-  const tableHook = useReactTable({
+  const table = useReactTable({
     data: filteredData,
     columns,
+    enableMultiSort: false,
+    autoResetPageIndex: true,
     filterFns: {
       fuzzy: fuzzyFilter,
     },
@@ -362,10 +462,6 @@ export function IssueTable({
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
   });
-
-  const tableRef = useRef(tableHook);
-  tableRef.current = tableHook;
-  const table = tableRef.current;
 
   const totalFilteredCount = filteredData.length;
   const totalPages = Math.ceil(totalFilteredCount / pageSize);
