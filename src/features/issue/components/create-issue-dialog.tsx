@@ -59,6 +59,8 @@ interface CreateIssueDialogProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   trigger?: React.ReactNode;
+  /** Pre-selects a status when opened from the board column + button. */
+  defaultStatus?: string;
 }
 
 /**
@@ -70,6 +72,7 @@ export function CreateIssueDialog({
   open: controlledOpen,
   onOpenChange: setControlledOpen,
   trigger,
+  defaultStatus,
 }: CreateIssueDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
@@ -93,7 +96,7 @@ export function CreateIssueDialog({
     defaultValues: {
       title: "",
       description: "",
-      status: "backlog",
+      status: (defaultStatus ?? "backlog") as FormValues["status"],
       priority: "no_priority",
       assigneeId: "unassigned",
       dueDate: "",

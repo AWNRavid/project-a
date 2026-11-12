@@ -2,17 +2,23 @@
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { IssueBoardView } from "@/features/issue/components/issue-board-view";
 import { IssueListView } from "@/features/issue/components/issue-list-view";
 import { orpcTanstackQueryUtils } from "@/lib/orpc/client";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeftIcon, FolderIcon } from "lucide-react";
+import { ArrowLeftIcon, FolderIcon, KanbanIcon, ListIcon } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 
 interface ProjectViewProps {
   projectId: string;
 }
 
+type ViewMode = "list" | "board";
+
 export function ProjectView({ projectId }: ProjectViewProps) {
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
+
   const { data: workspaceData } = useQuery(
     orpcTanstackQueryUtils.workspace.listWorkspaces.queryOptions({ input: {} }),
   );
@@ -65,6 +71,8 @@ export function ProjectView({ projectId }: ProjectViewProps) {
     );
   }
 
+  const workspaceId = workspace?.id ?? project.workspaceId;
+
   return (
     <div className="space-y-6">
       {/* Project Overview Header */}
@@ -99,14 +107,37 @@ export function ProjectView({ projectId }: ProjectViewProps) {
               </p>
             )}
           </div>
+
+          {/* View mode toggle */}
+          <div className="flex items-center gap-1 rounded-md border border-slate-200 p-0.5 dark:border-slate-700">
+            <Button
+              variant={viewMode === "list" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-7 gap-1.5 px-2 text-xs"
+              onClick={() => setViewMode("list")}
+            >
+              <ListIcon className="size-3.5" />
+              List
+            </Button>
+            <Button
+              variant={viewMode === "board" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-7 gap-1.5 px-2 text-xs"
+              onClick={() => setViewMode("board")}
+            >
+              <KanbanIcon className="size-3.5" />
+              Board
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Issues Table View */}
-      <IssueListView
-        projectId={projectId}
-        workspaceId={workspace?.id ?? project.workspaceId}
-      />
+      {/* View */}
+      {viewMode === "list" ? (
+        <IssueListView projectId={projectId} workspaceId={workspaceId} />
+      ) : (
+        <IssueBoardView projectId={projectId} workspaceId={workspaceId} />
+      )}
     </div>
   );
 }
