@@ -95,6 +95,7 @@ export const userRelations = relations(userTable, ({ many }) => ({
   workspaceMemberships: many(workspaceMemberTable),
   createdProjects: many(projectTable),
   comments: many(commentTable),
+  attachments: many(attachmentTable),
 }));
 
 export const sessionRelations = relations(sessionTable, ({ one }) => ({
@@ -342,6 +343,7 @@ export const issueRelations = relations(issueTable, ({ one, many }) => ({
     references: [userTable.id],
   }),
   comments: many(commentTable),
+  attachments: many(attachmentTable),
 }));
 
 export const commentTable = pgTable(
@@ -373,6 +375,49 @@ export const commentRelations = relations(commentTable, ({ one }) => ({
   }),
   author: one(userTable, {
     fields: [commentTable.authorId],
+    references: [userTable.id],
+  }),
+}));
+
+// One row per file uploaded to an issue. The actual file bytes live in
+// MinIO; this table only stores metadata plus the storage path.
+export const attachmentTable = pgTable(
+  "attachment",
+  {
+    id: uuid("id").primaryKey().$defaultFn(uuidv7),
+    // Deleting the issue also deletes its attachment rows (CASCADE).
+    // The files in MinIO are removed by the delete route.
+    issueId: uuid("issue_id")
+      .notNull()
+      .references(() => issueTable.id, { onDelete: "cascade" }),
+    uploadedById: text("uploaded_by_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    // Original file name shown to users, e.g. "design.pdf".
+    filename: text("filename").notNull(),
+    // MIME type, e.g. "image/png" or "application/pdf".
+    contentType: text("content_type").notNull(),
+    // Full MinIO path including bucket, e.g.
+    // "private-data/attachment/<issueId>/<uuid>-design.pdf".
+    // Store the path (not a URL) so the endpoint can change; URLs are
+    // generated on demand with getFileUrl.
+    url: text("url").notNull(),
+    // File size in bytes.
+    size: integer("size").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("attachment_issue_id_idx").on(table.issueId)],
+);
+
+export const attachmentRelations = relations(attachmentTable, ({ one }) => ({
+  issue: one(issueTable, {
+    fields: [attachmentTable.issueId],
+    references: [issueTable.id],
+  }),
+  uploadedBy: one(userTable, {
+    fields: [attachmentTable.uploadedById],
     references: [userTable.id],
   }),
 }));
