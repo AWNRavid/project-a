@@ -2,6 +2,7 @@
 // one key per feature folder; the shape of this object IS the
 // client-side API surface (orpcClient.<feature>.<route>), and the
 // exported Router type drives end-to-end type inference.
+import commentRouter from "@/features/comment/routes";
 import postRouter from "@/features/EXAMPLE-post/routes";
 import issueRouter from "@/features/issue/routes";
 import projectRouter from "@/features/project/routes";
@@ -14,6 +15,7 @@ export const router = {
   workspace: workspaceRouter,
   project: projectRouter,
   issue: issueRouter,
+  comment: commentRouter,
 };
 
 // Type export used by clients (React components) and the server-side

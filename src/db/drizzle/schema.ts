@@ -94,6 +94,7 @@ export const userRelations = relations(userTable, ({ many }) => ({
   accounts: many(accountTable),
   workspaceMemberships: many(workspaceMemberTable),
   createdProjects: many(projectTable),
+  comments: many(commentTable),
 }));
 
 export const sessionRelations = relations(sessionTable, ({ one }) => ({
@@ -327,7 +328,7 @@ export const issueTable = pgTable(
   ],
 );
 
-export const issueRelations = relations(issueTable, ({ one }) => ({
+export const issueRelations = relations(issueTable, ({ one, many }) => ({
   project: one(projectTable, {
     fields: [issueTable.projectId],
     references: [projectTable.id],
@@ -338,6 +339,40 @@ export const issueRelations = relations(issueTable, ({ one }) => ({
   }),
   createdBy: one(userTable, {
     fields: [issueTable.createdById],
+    references: [userTable.id],
+  }),
+  comments: many(commentTable),
+}));
+
+export const commentTable = pgTable(
+  "comment",
+  {
+    id: uuid("id").primaryKey().$defaultFn(uuidv7),
+    issueId: uuid("issue_id")
+      .notNull()
+      .references(() => issueTable.id, { onDelete: "cascade" }),
+    authorId: text("author_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [index("comment_issue_id_idx").on(table.issueId)],
+);
+
+export const commentRelations = relations(commentTable, ({ one }) => ({
+  issue: one(issueTable, {
+    fields: [commentTable.issueId],
+    references: [issueTable.id],
+  }),
+  author: one(userTable, {
+    fields: [commentTable.authorId],
     references: [userTable.id],
   }),
 }));

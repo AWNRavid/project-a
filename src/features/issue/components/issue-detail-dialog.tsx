@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { IssueCommentsSection } from "@/features/comment/components/issue-comments-section";
 import { CalendarIcon, EditIcon, Trash2Icon, UserIcon } from "lucide-react";
 import type { IssueDetail } from "../types";
 import { IssuePriorityBadge } from "./issue-priority-badge";
@@ -48,7 +49,7 @@ export function IssueDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[650px]">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground font-mono text-xs font-semibold tracking-wider uppercase">
@@ -137,6 +138,11 @@ export function IssueDetailDialog({
               </p>
             </div>
           </div>
+
+          <Separator />
+
+          {/* Comments and Collaboration Section */}
+          <IssueCommentsSection issueId={issue.id} />
         </div>
 
         <DialogFooter className="flex items-center gap-2 pt-2 sm:justify-between">
