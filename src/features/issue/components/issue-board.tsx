@@ -61,14 +61,11 @@ function midpoint(a: string, b: string): string {
   const bPadded = b.padEnd(pad, "~"); // '~' is ASCII 126, above printable range
 
   let result = "";
-  let carry = 0;
   for (let i = pad - 1; i >= 0; i--) {
     const aCode = aPadded.charCodeAt(i);
     const bCode = bPadded.charCodeAt(i);
-    const sum = aCode + bCode + carry * 256;
-    // We don't actually need per-digit carry for a simple midpoint — just average:
+    // We don't actually need per-digit carry — just average the two codes.
     result = String.fromCharCode(Math.floor((aCode + bCode) / 2)) + result;
-    carry = (aCode + bCode) % 2;
   }
   // Trim trailing chars equal to the lower bound to keep strings short.
   return result.replace(/0+$/, "") || "0";

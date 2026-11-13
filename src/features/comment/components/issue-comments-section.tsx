@@ -35,6 +35,12 @@ export function IssueCommentsSection({ issueId }: IssueCommentsSectionProps) {
       queryClient.invalidateQueries({
         queryKey: commentsQueryOptions.queryKey,
       });
+      queryClient.invalidateQueries({
+        queryKey:
+          orpcTanstackQueryUtils.activity.getIssueActivities.queryOptions({
+            input: { issueId },
+          }).queryKey,
+      });
       toast.success("Comment added");
     },
     onError: (error) => {

@@ -5,6 +5,7 @@ import {
   projectTable,
   userTable,
 } from "@/db/drizzle/schema";
+import { recordActivities } from "@/features/activity/services/activity-service";
 import { requireWorkspaceRole } from "@/features/workspace/utils/workspace-access";
 import {
   deleteFile,
@@ -102,24 +103,35 @@ export class AttachmentService {
     );
 
     try {
-      // 2. Save the metadata row that points to the stored object.
-      const [created] = await db
-        .insert(attachmentTable)
-        .values({
-          issueId: input.issueId,
-          uploadedById: userId,
-          filename: input.file.name,
-          contentType: input.file.type || "application/octet-stream",
-          url: storagePath,
-          size: input.file.size,
-        })
-        .returning();
+      // 2. Save the metadata row and its activity entry together.
+      const created = await db.transaction(async (tx) => {
+        const [row] = await tx
+          .insert(attachmentTable)
+          .values({
+            issueId: input.issueId,
+            uploadedById: userId,
+            filename: input.file.name,
+            contentType: input.file.type || "application/octet-stream",
+            url: storagePath,
+            size: input.file.size,
+          })
+          .returning();
 
-      if (!created) {
-        throw new ORPCError("INTERNAL_SERVER_ERROR", {
-          message: "Failed to save attachment",
-        });
-      }
+        if (!row) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to save attachment",
+          });
+        }
+
+        await recordActivities(tx, input.issueId, userId, [
+          {
+            type: "attachment_added",
+            payload: { filename: row.filename },
+          },
+        ]);
+
+        return row;
+      });
 
       // 3. Load uploader details for the UI.
       const [uploader] = await db

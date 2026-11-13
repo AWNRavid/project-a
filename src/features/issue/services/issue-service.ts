@@ -5,6 +5,8 @@ import {
   userTable,
   workspaceMemberTable,
 } from "@/db/drizzle/schema";
+import { buildIssueChangeEvents } from "@/features/activity/services/activity-diff";
+import { recordActivities } from "@/features/activity/services/activity-service";
 import { requireWorkspaceRole } from "@/features/workspace/utils/workspace-access";
 import { ORPCError } from "@orpc/server";
 import { and, asc, eq, ilike, sql } from "drizzle-orm";
@@ -21,15 +23,17 @@ import type {
  */
 export class IssueService {
   /**
-   * Helper to verify if a user belongs to a workspace before assignment.
+   * Looks up a workspace member and returns their display name. Returns
+   * null when the user is not a member, which callers treat as invalid.
    */
-  private async isWorkspaceMember(
+  private async getWorkspaceMember(
     userId: string,
     workspaceId: string,
-  ): Promise<boolean> {
+  ): Promise<{ name: string } | null> {
     const [member] = await db
-      .select({ id: workspaceMemberTable.id })
+      .select({ name: userTable.name })
       .from(workspaceMemberTable)
+      .innerJoin(userTable, eq(workspaceMemberTable.userId, userTable.id))
       .where(
         and(
           eq(workspaceMemberTable.workspaceId, workspaceId),
@@ -38,7 +42,7 @@ export class IssueService {
       )
       .limit(1);
 
-    return Boolean(member);
+    return member ?? null;
   }
 
   /**
@@ -69,11 +73,11 @@ export class IssueService {
 
     // 3. Verify assignee belongs to the same workspace if provided.
     if (input.assigneeId) {
-      const isMember = await this.isWorkspaceMember(
+      const assignee = await this.getWorkspaceMember(
         input.assigneeId,
         project.workspaceId,
       );
-      if (!isMember) {
+      if (!assignee) {
         throw new ORPCError("BAD_REQUEST", {
           message: "Assignee must be an active member of this workspace",
         });
@@ -113,6 +117,17 @@ export class IssueService {
           createdById: userId,
         })
         .returning();
+
+      if (!created) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to create issue",
+        });
+      }
+
+      // Save the first history entry in the same transaction.
+      await recordActivities(tx, created.id, userId, [
+        { type: "issue_created", payload: { title: created.title } },
+      ]);
 
       return created;
     });
@@ -267,10 +282,15 @@ export class IssueService {
     const [existing] = await db
       .select({
         id: issueTable.id,
+        status: issueTable.status,
+        priority: issueTable.priority,
+        assigneeId: issueTable.assigneeId,
+        assigneeName: userTable.name,
         workspaceId: projectTable.workspaceId,
       })
       .from(issueTable)
       .innerJoin(projectTable, eq(issueTable.projectId, projectTable.id))
+      .leftJoin(userTable, eq(issueTable.assigneeId, userTable.id))
       .where(eq(issueTable.id, input.issueId))
       .limit(1);
 
@@ -284,35 +304,49 @@ export class IssueService {
       "owner",
     ]);
 
-    // Validate new assignee membership if updating assigneeId.
+    // Validate the new assignee and remember their name for the log.
+    let newAssigneeName: string | null = null;
     if (input.assigneeId) {
-      const isMember = await this.isWorkspaceMember(
+      const assignee = await this.getWorkspaceMember(
         input.assigneeId,
         existing.workspaceId,
       );
-      if (!isMember) {
+      if (!assignee) {
         throw new ORPCError("BAD_REQUEST", {
           message: "Assignee must be an active member of this workspace",
         });
       }
+      newAssigneeName = assignee.name;
     }
 
     const { issueId, ...updateFields } = input;
 
-    const [updated] = await db
-      .update(issueTable)
-      .set({
-        ...updateFields,
-        updatedAt: new Date(),
-      })
-      .where(eq(issueTable.id, issueId))
-      .returning();
+    // The update and its history rows commit together.
+    return await db.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(issueTable)
+        .set({
+          ...updateFields,
+          updatedAt: new Date(),
+        })
+        .where(eq(issueTable.id, issueId))
+        .returning();
 
-    if (!updated) {
-      throw new ORPCError("NOT_FOUND", { message: "Issue not found" });
-    }
+      if (!updated) {
+        throw new ORPCError("NOT_FOUND", { message: "Issue not found" });
+      }
 
-    return updated;
+      const events = buildIssueChangeEvents(existing, {
+        status: input.status,
+        priority: input.priority,
+        assigneeId: input.assigneeId,
+        assigneeName: newAssigneeName,
+      });
+
+      await recordActivities(tx, issueId, userId, events);
+
+      return updated;
+    });
   }
 
   /**

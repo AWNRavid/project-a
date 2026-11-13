@@ -5,6 +5,7 @@ import {
   projectTable,
   userTable,
 } from "@/db/drizzle/schema";
+import { recordActivities } from "@/features/activity/services/activity-service";
 import { requireWorkspaceRole } from "@/features/workspace/utils/workspace-access";
 import { ORPCError } from "@orpc/server";
 import { asc, eq } from "drizzle-orm";
@@ -44,20 +45,29 @@ export class CommentService {
       "owner",
     ]);
 
-    const [newComment] = await db
-      .insert(commentTable)
-      .values({
-        issueId: input.issueId,
-        authorId: userId,
-        body: input.body,
-      })
-      .returning();
+    // Save the comment and its activity entry together.
+    const newComment = await db.transaction(async (tx) => {
+      const [created] = await tx
+        .insert(commentTable)
+        .values({
+          issueId: input.issueId,
+          authorId: userId,
+          body: input.body,
+        })
+        .returning();
 
-    if (!newComment) {
-      throw new ORPCError("INTERNAL_SERVER_ERROR", {
-        message: "Failed to create comment",
-      });
-    }
+      if (!created) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to create comment",
+        });
+      }
+
+      await recordActivities(tx, input.issueId, userId, [
+        { type: "comment_added", payload: {} },
+      ]);
+
+      return created;
+    });
 
     const [author] = await db
       .select({

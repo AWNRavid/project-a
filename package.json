@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "check": "pnpm typecheck && pnpm lint",
+    "test:activity": "tsx --test src/features/activity/services/activity-diff.test.ts",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint && eslint",
     "format": "prettier --write src",
