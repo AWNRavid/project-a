@@ -1,39 +1,44 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import { useSortable } from "@dnd-kit/react/sortable";
 import { GripVerticalIcon } from "lucide-react";
-import type { IssueDetail, IssuePriority } from "../types";
+import type { IssueDetail, IssuePriority, IssueStatus } from "../types";
 import { IssuePriorityBadge } from "./issue-priority-badge";
 
 interface BoardIssueCardProps {
   issue: IssueDetail;
+  /** Position of the card within its column. */
+  index: number;
+  /** Column the card belongs to — sortable items only reorder within the same group. */
+  group: IssueStatus;
   onClick: (issue: IssueDetail) => void;
 }
 
 /**
  * Draggable card representing a single issue in the Kanban board.
  */
-export function BoardIssueCard({ issue, onClick }: BoardIssueCardProps) {
+export function BoardIssueCard({
+  issue,
+  index,
+  group,
+  onClick,
+}: BoardIssueCardProps) {
   const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
+    ref: setNodeRef,
+    handleRef: setHandleRef,
     isDragging,
-  } = useSortable({ id: issue.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+  } = useSortable({
+    id: issue.id,
+    index,
+    group,
+    type: "issue",
+    accept: "issue",
+  });
 
   return (
     <div
       ref={setNodeRef}
-      style={style}
       className={`group rounded-md border border-slate-200 bg-white p-3 shadow-xs dark:border-slate-700 dark:bg-slate-900 ${
         isDragging ? "opacity-50 shadow-lg ring-2 ring-blue-400" : ""
       }`}
@@ -41,9 +46,8 @@ export function BoardIssueCard({ issue, onClick }: BoardIssueCardProps) {
       <div className="flex items-start gap-2">
         {/* Drag handle */}
         <button
+          ref={setHandleRef}
           type="button"
-          {...attributes}
-          {...listeners}
           className="text-muted-foreground mt-0.5 shrink-0 cursor-grab opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing"
           aria-label="Drag to reorder"
         >

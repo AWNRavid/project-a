@@ -2,16 +2,13 @@
 
 import { Button } from "@/components/ui/button";
 import { orpcClient, orpcTanstackQueryUtils } from "@/lib/orpc/client";
+import { move } from "@dnd-kit/helpers";
 import {
+  DragDropProvider,
   type DragEndEvent,
   type DragOverEvent,
-  DndContext,
   DragOverlay,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import { arrayMove } from "@dnd-kit/sortable";
+} from "@dnd-kit/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { AlertCircleIcon, RefreshCwIcon } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
@@ -22,33 +19,74 @@ import { BoardIssueCard } from "./board-issue-card";
 import { CreateIssueDialog } from "./create-issue-dialog";
 import { IssueDetailDialog } from "./issue-detail-dialog";
 
-const COLUMNS: { status: IssueStatus; label: string; headerClass: string }[] =
-  [
-    {
-      status: "backlog",
-      label: "Backlog",
-      headerClass:
-        "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
-    },
-    {
-      status: "todo",
-      label: "Todo",
-      headerClass:
-        "bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400",
-    },
-    {
-      status: "in_progress",
-      label: "In Progress",
-      headerClass:
-        "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400",
-    },
-    {
-      status: "done",
-      label: "Done",
-      headerClass:
-        "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400",
-    },
-  ];
+const COLUMNS: { status: IssueStatus; label: string; headerClass: string }[] = [
+  {
+    status: "backlog",
+    label: "Backlog",
+    headerClass:
+      "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+  },
+  {
+    status: "todo",
+    label: "Todo",
+    headerClass:
+      "bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400",
+  },
+  {
+    status: "in_progress",
+    label: "In Progress",
+    headerClass:
+      "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400",
+  },
+  {
+    status: "done",
+    label: "Done",
+    headerClass:
+      "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400",
+  },
+];
+
+/**
+ * Issue ids keyed by status. Drives both rendering and the `move` helper.
+ */
+type Board = Record<IssueStatus, string[]>;
+
+/** Every status key, including ones without a visible lane. */
+function createBoard(): Board {
+  return {
+    backlog: [],
+    todo: [],
+    in_progress: [],
+    done: [],
+    cancelled: [],
+  };
+}
+
+/** Groups issues into their status lanes, sorted by order then number. */
+function boardFromIssues(issues: IssueDetail[]): Board {
+  const board = createBoard();
+  const sorted = [...issues].sort((a, b) =>
+    a.order < b.order ? -1 : a.order > b.order ? 1 : a.number - b.number,
+  );
+  for (const issue of sorted) {
+    const column = COLUMNS.find((c) => c.status === issue.status);
+    if (column) board[column.status].push(issue.id);
+  }
+  return board;
+}
+
+/** Resolves board ids back to issue records, skipping ones no longer loaded. */
+function resolveIssues(
+  ids: string[],
+  issuesById: Map<string, IssueDetail>,
+): IssueDetail[] {
+  const result: IssueDetail[] = [];
+  for (const id of ids) {
+    const issue = issuesById.get(id);
+    if (issue) result.push(issue);
+  }
+  return result;
+}
 
 /**
  * Generates a fractional-index string between two existing order values.
@@ -85,7 +123,8 @@ function computeOrder(
 
   if (!before && !after) return "a0";
   if (!before) return midpoint("", after.order);
-  if (!after) return midpoint(before.order, "~".repeat(before.order.length + 2));
+  if (!after)
+    return midpoint(before.order, "~".repeat(before.order.length + 2));
   return midpoint(before.order, after.order);
 }
 
@@ -112,33 +151,25 @@ export function IssueBoard({
 }: IssueBoardProps) {
   const queryClient = useQueryClient();
 
-  const [activeIssue, setActiveIssue] = useState<IssueDetail | null>(null);
   const [selectedForDetail, setSelectedForDetail] =
     useState<IssueDetail | null>(null);
   const [createForStatus, setCreateForStatus] = useState<IssueStatus | null>(
     null,
   );
 
-  // Group issues by status, sorted by order then number
-  const columns = useMemo(() => {
-    const grouped = new Map<IssueStatus, IssueDetail[]>(
-      COLUMNS.map((c) => [c.status, []]),
-    );
-    for (const issue of issues) {
-      const bucket = grouped.get(issue.status as IssueStatus);
-      if (bucket) bucket.push(issue);
-    }
-    for (const [, bucket] of grouped) {
-      bucket.sort((a, b) =>
-        a.order < b.order ? -1 : a.order > b.order ? 1 : a.number - b.number,
-      );
-    }
-    return grouped;
-  }, [issues]);
+  /**
+   * Lane contents while a drag is in progress, so a refetch can't yank cards
+   * out from under the pointer. `null` means "derive from server data".
+   */
+  const [dragBoard, setDragBoard] = useState<Board | null>(null);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  const boardFromData = useMemo(() => boardFromIssues(issues), [issues]);
+  const issuesById = useMemo(
+    () => new Map(issues.map((issue) => [issue.id, issue])),
+    [issues],
   );
+
+  const board = dragBoard ?? boardFromData;
 
   const queryKey = orpcTanstackQueryUtils.issue.getAllIssues.queryKey({
     input: { projectId },
@@ -153,9 +184,7 @@ export function IssueBoard({
       // Optimistic update
       queryClient.setQueryData<IssueDetail[]>(queryKey, (old) =>
         old
-          ? old.map((i) =>
-              i.id === issueId ? { ...i, status, order } : i,
-            )
+          ? old.map((i) => (i.id === issueId ? { ...i, status, order } : i))
           : old,
       );
 
@@ -170,90 +199,51 @@ export function IssueBoard({
     [queryClient, queryKey],
   );
 
-  const handleDragStart = useCallback(
-    ({ active }: { active: { id: string | number } }) => {
-      const found = issues.find((i) => i.id === active.id);
-      setActiveIssue(found ?? null);
-    },
-    [issues],
-  );
+  const handleDragStart = useCallback(() => {
+    setDragBoard(boardFromData);
+  }, [boardFromData]);
 
-  const handleDragOver = useCallback(
-    ({ active, over }: DragOverEvent) => {
-      if (!over || active.id === over.id) return;
-
-      // Determine destination status (column id or another card's status)
-      const destStatus = (
-        COLUMNS.some((c) => c.status === over.id)
-          ? over.id
-          : issues.find((i) => i.id === over.id)?.status
-      ) as IssueStatus | undefined;
-
-      if (!destStatus) return;
-
-      const srcIssue = issues.find((i) => i.id === active.id);
-      if (!srcIssue || srcIssue.status === destStatus) return;
-
-      // Optimistic cross-column move without persisting yet (persisted on dragEnd)
-      queryClient.setQueryData<IssueDetail[]>(queryKey, (old) =>
-        old
-          ? old.map((i) =>
-              i.id === active.id ? { ...i, status: destStatus } : i,
-            )
-          : old,
-      );
-    },
-    [issues, queryClient, queryKey],
-  );
+  /** Treat the drag as a live edit of the lanes, not of server state. */
+  const handleDragOver = useCallback((event: DragOverEvent) => {
+    setDragBoard((current) => (current ? move(current, event) : current));
+  }, []);
 
   const handleDragEnd = useCallback(
-    ({ active, over }: DragEndEvent) => {
-      setActiveIssue(null);
-      if (!over) return;
+    (event: DragEndEvent) => {
+      const current = dragBoard;
+      if (!current) return;
 
-      const movedIssue = issues.find((i) => i.id === active.id);
-      if (!movedIssue) return;
+      const { source } = event.operation;
 
-      // Destination status
-      const destStatus = (
-        COLUMNS.some((c) => c.status === over.id)
-          ? over.id
-          : issues.find((i) => i.id === over.id)?.status ??
-            movedIssue.status
-      ) as IssueStatus;
-
-      // Current ordered list in the destination column (including the moving card)
-      const destItems = (columns.get(destStatus) ?? []).map((i) =>
-        i.id === movedIssue.id ? { ...movedIssue, status: destStatus } : i,
-      );
-
-      // If the moved card was already in this column, preserve relative order
-      const overIndex = destItems.findIndex((i) => i.id === over.id);
-      const activeIndex = destItems.findIndex((i) => i.id === active.id);
-
-      let finalItems = destItems;
-      if (
-        activeIndex !== -1 &&
-        overIndex !== -1 &&
-        activeIndex !== overIndex
-      ) {
-        finalItems = arrayMove(destItems, activeIndex, overIndex);
-      } else if (activeIndex === -1) {
-        // Coming from another column — insert before the hovered card
-        const insertAt = overIndex !== -1 ? overIndex : finalItems.length;
-        finalItems = [...finalItems];
-        finalItems.splice(insertAt, 0, {
-          ...movedIssue,
-          status: destStatus,
-        });
+      if (event.canceled || !source) {
+        setDragBoard(null);
+        return;
       }
 
-      const targetIndex = finalItems.findIndex((i) => i.id === active.id);
-      const newOrder = computeOrder(finalItems, targetIndex, String(active.id));
+      // Applies the final drop (no-op if `onDragOver` already moved it).
+      const next = move(current, event);
+      const movedId = String(source.id);
+      const destStatus = COLUMNS.find((c) =>
+        next[c.status].includes(movedId),
+      )?.status;
 
-      void persist(String(active.id), destStatus, newOrder);
+      if (!destStatus) {
+        setDragBoard(null);
+        return;
+      }
+
+      const destIssues = resolveIssues(next[destStatus], issuesById);
+      const newOrder = computeOrder(
+        destIssues,
+        next[destStatus].indexOf(movedId),
+        movedId,
+      );
+
+      // Persist first so the re-render already sees the new cache state.
+      void persist(movedId, destStatus, newOrder);
+      setDragBoard(null);
     },
-    [issues, columns, persist],
+    [dragBoard, issuesById, persist],
   );
 
   if (error) {
@@ -281,8 +271,7 @@ export function IssueBoard({
 
   return (
     <>
-      <DndContext
-        sensors={sensors}
+      <DragDropProvider
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
@@ -295,9 +284,7 @@ export function IssueBoard({
               label={col.label}
               headerClass={col.headerClass}
               issues={
-                isLoading
-                  ? []
-                  : (columns.get(col.status) ?? [])
+                isLoading ? [] : resolveIssues(board[col.status], issuesById)
               }
               onCardClick={setSelectedForDetail}
               onCreateClick={setCreateForStatus}
@@ -307,16 +294,26 @@ export function IssueBoard({
 
         {/* Drag overlay — renders a floating copy of the dragged card */}
         <DragOverlay>
-          {activeIssue ? (
-            <div className="rotate-1 shadow-xl">
-              <BoardIssueCard
-                issue={activeIssue}
-                onClick={() => undefined}
-              />
-            </div>
-          ) : null}
+          {(source) => {
+            const id = String(source.id);
+            const issue = issuesById.get(id);
+            const column = COLUMNS.find((c) => board[c.status].includes(id));
+
+            if (!issue || !column) return null;
+
+            return (
+              <div className="rotate-1 shadow-xl">
+                <BoardIssueCard
+                  issue={issue}
+                  index={board[column.status].indexOf(id)}
+                  group={column.status}
+                  onClick={() => undefined}
+                />
+              </div>
+            );
+          }}
         </DragOverlay>
-      </DndContext>
+      </DragDropProvider>
 
       {/* Issue detail dialog */}
       <IssueDetailDialog

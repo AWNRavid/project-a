@@ -1,15 +1,16 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useDroppable } from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+import { useDroppable } from "@dnd-kit/react";
 import { PlusIcon } from "lucide-react";
-import type { IssueDetail } from "../types";
+import type { IssueDetail, IssueStatus } from "../types";
 import { BoardIssueCard } from "./board-issue-card";
-import type { IssueStatus } from "../types";
+
+/**
+ * `CollisionPriority.Low` — cards outrank their column when both overlap, so
+ * the column only wins when hovering empty space.
+ */
+const COLUMN_COLLISION_PRIORITY = 1;
 
 interface BoardColumnProps {
   status: IssueStatus;
@@ -31,7 +32,11 @@ export function BoardColumn({
   onCardClick,
   onCreateClick,
 }: BoardColumnProps) {
-  const { setNodeRef, isOver } = useDroppable({ id: status });
+  const { ref: setDropTarget, isDropTarget } = useDroppable({
+    id: status,
+    accept: "issue",
+    collisionPriority: COLUMN_COLLISION_PRIORITY,
+  });
 
   return (
     <div className="flex w-[280px] shrink-0 flex-col rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/40">
@@ -60,24 +65,23 @@ export function BoardColumn({
 
       {/* Drop zone */}
       <div
-        ref={setNodeRef}
+        ref={setDropTarget}
         className={`flex flex-1 flex-col gap-2 overflow-y-auto p-2 transition-colors ${
-          isOver
-            ? "bg-blue-50 dark:bg-blue-950/20"
-            : ""
+          isDropTarget ? "bg-blue-50 dark:bg-blue-950/20" : ""
         }`}
         style={{ minHeight: 80 }}
       >
-        <SortableContext
-          items={issues.map((i) => i.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          {issues.map((issue) => (
-            <BoardIssueCard key={issue.id} issue={issue} onClick={onCardClick} />
-          ))}
-        </SortableContext>
+        {issues.map((issue, index) => (
+          <BoardIssueCard
+            key={issue.id}
+            issue={issue}
+            index={index}
+            group={status}
+            onClick={onCardClick}
+          />
+        ))}
 
-        {issues.length === 0 && !isOver && (
+        {issues.length === 0 && !isDropTarget && (
           <p className="py-4 text-center text-xs text-slate-400 dark:text-slate-600">
             No issues
           </p>
