@@ -96,6 +96,7 @@ export const userRelations = relations(userTable, ({ many }) => ({
   createdProjects: many(projectTable),
   comments: many(commentTable),
   attachments: many(attachmentTable),
+  activities: many(activityTable),
 }));
 
 export const sessionRelations = relations(sessionTable, ({ one }) => ({
@@ -344,6 +345,7 @@ export const issueRelations = relations(issueTable, ({ one, many }) => ({
   }),
   comments: many(commentTable),
   attachments: many(attachmentTable),
+  activities: many(activityTable),
 }));
 
 export const commentTable = pgTable(
@@ -418,6 +420,47 @@ export const attachmentRelations = relations(attachmentTable, ({ one }) => ({
   }),
   uploadedBy: one(userTable, {
     fields: [attachmentTable.uploadedById],
+    references: [userTable.id],
+  }),
+}));
+
+// One row per change made to an issue, e.g. "status changed from todo
+// to done". The detail of the change lives in `payload` as JSON text.
+export const activityTable = pgTable(
+  "activity",
+  {
+    id: uuid("id").primaryKey().$defaultFn(uuidv7),
+    // Deleting the issue also deletes its history (CASCADE).
+    issueId: uuid("issue_id")
+      .notNull()
+      .references(() => issueTable.id, { onDelete: "cascade" }),
+    // Who performed the change; deleting the user removes their
+    // history rows (CASCADE), matching the other child tables.
+    actorId: text("actor_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    // Event name, e.g. "status_changed". Parsed into a typed union at
+    // the service boundary.
+    type: text("type").notNull(),
+    // JSON text with change details, e.g. {"from":"todo","to":"done"}.
+    payload: text("payload").notNull().default("{}"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("activity_issue_id_idx").on(table.issueId),
+    index("activity_actor_id_idx").on(table.actorId),
+  ],
+);
+
+export const activityRelations = relations(activityTable, ({ one }) => ({
+  issue: one(issueTable, {
+    fields: [activityTable.issueId],
+    references: [issueTable.id],
+  }),
+  actor: one(userTable, {
+    fields: [activityTable.actorId],
     references: [userTable.id],
   }),
 }));

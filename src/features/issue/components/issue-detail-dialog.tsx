@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { IssueActivitySection } from "@/features/activity/components/issue-activity-section";
 import { IssueAttachmentsSection } from "@/features/attachment/components/issue-attachments-section";
 import { IssueCommentsSection } from "@/features/comment/components/issue-comments-section";
 import { CalendarIcon, EditIcon, Trash2Icon, UserIcon } from "lucide-react";
@@ -144,6 +145,11 @@ export function IssueDetailDialog({
 
           {/* Files attached to this issue (stored in MinIO). */}
           <IssueAttachmentsSection issueId={issue.id} />
+
+          <Separator />
+
+          {/* Who changed what, and when. */}
+          <IssueActivitySection issueId={issue.id} />
 
           <Separator />
 

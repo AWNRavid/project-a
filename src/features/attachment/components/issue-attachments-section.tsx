@@ -69,6 +69,12 @@ export function IssueAttachmentsSection({
       queryClient.invalidateQueries({
         queryKey: attachmentsQueryOptions.queryKey,
       });
+      queryClient.invalidateQueries({
+        queryKey:
+          orpcTanstackQueryUtils.activity.getIssueActivities.queryOptions({
+            input: { issueId },
+          }).queryKey,
+      });
       toast.success("Attachment uploaded");
     },
     onError: (error) => {
