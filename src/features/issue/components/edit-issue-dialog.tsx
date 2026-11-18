@@ -279,7 +279,7 @@ export function EditIssueDialog({
                                 {member.image ? (
                                   <AvatarImage src={member.image} />
                                 ) : null}
-                                <AvatarFallback className="text-[10px]">
+                                <AvatarFallback className="text-[11px]">
                                   {member.name.slice(0, 2).toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>

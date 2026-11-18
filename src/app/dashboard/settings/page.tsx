@@ -1,5 +1,6 @@
 // Workspace settings page. Server component: guards access, then
 // renders the client-managed settings form.
+import { PageHeader } from "@/components/page-header";
 import { authGuard } from "@/features/user/guards/auth-guard";
 import { WorkspaceSettings } from "@/features/workspace/components/workspace-settings";
 import { redirect } from "next/navigation";
@@ -15,12 +16,15 @@ export default async function WorkspaceSettingsPage() {
   // The child component fetches the workspace client-side; nothing
   // workspace-specific is needed on the server besides the guard.
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground text-sm">Manage your workspace.</p>
+    <div className="pb-10">
+      <PageHeader
+        title="Workspace settings"
+        description="The workspace identity, its members, the invitations in flight, and the exits."
+      />
+
+      <div className="px-6 pt-5">
+        <WorkspaceSettings />
       </div>
-      <WorkspaceSettings />
     </div>
   );
 }

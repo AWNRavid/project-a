@@ -161,13 +161,13 @@ export function CreateIssueDialog({
         <DialogTrigger asChild>
           <Button size="sm">
             <PlusIcon className="mr-1.5 size-4" />
-            New Issue
+            New issue
           </Button>
         </DialogTrigger>
       )}
       <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
-          <DialogTitle>Create Issue</DialogTitle>
+          <DialogTitle>New issue</DialogTitle>
           <DialogDescription>
             Add a new issue to track work in this project.
           </DialogDescription>
@@ -294,7 +294,7 @@ export function CreateIssueDialog({
                                 {member.image ? (
                                   <AvatarImage src={member.image} />
                                 ) : null}
-                                <AvatarFallback className="text-[10px]">
+                                <AvatarFallback className="text-[11px]">
                                   {member.name.slice(0, 2).toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
@@ -340,7 +340,7 @@ export function CreateIssueDialog({
                     Creating...
                   </>
                 ) : (
-                  "Create Issue"
+                  "Create issue"
                 )}
               </Button>
             </DialogFooter>

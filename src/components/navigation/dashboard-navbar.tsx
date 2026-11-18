@@ -1,26 +1,27 @@
 "use client";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import Link from "next/link";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { UserDropdown } from "./user-dropdown";
 
+/**
+ * The chart table's top edge: where you are on the left, who you are and
+ * what light you work under on the right.
+ */
 export function DashboardNavbar() {
   return (
-    <nav className="bg-background/80 supports-[backdrop-filter]:bg-background/60 border-b px-4 backdrop-blur">
-      <div className="flex h-16 items-center justify-between">
-        <div className="flex items-center gap-2">
-          <SidebarTrigger className="-ml-1" />
-
-          {/* Logo and title - visible on mobile */}
-          <Link href={"/dashboard"} className="flex items-center md:hidden">
-            <span className="ml-3 hidden text-lg font-semibold text-gray-900 md:inline-block">
-              NextJS Template
-            </span>
-          </Link>
+    <nav className="bg-background/85 supports-[backdrop-filter]:bg-background/65 sticky top-0 z-30 border-b backdrop-blur">
+      <div className="flex h-12 items-center justify-between gap-3 px-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <SidebarTrigger className="-ml-0.5" />
+          <span className="text-muted-foreground hidden font-mono text-[11px] tracking-[0.18em] uppercase sm:inline">
+            Trackr / Chart
+          </span>
         </div>
 
-        {/* Right side - User dropdown */}
-        <div className="flex items-center">
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          <span className="bg-border mx-1 h-5 w-px" aria-hidden />
           <UserDropdown />
         </div>
       </div>

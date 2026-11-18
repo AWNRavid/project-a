@@ -219,10 +219,10 @@ export function WorkspaceSettingsForm({
     // Settings card: header copy plus the name/logo form.
     <Card>
       <CardHeader>
-        <CardTitle>Workspace settings</CardTitle>
+        <CardTitle>Identity</CardTitle>
         <CardDescription>
-          Update your workspace name and logo. Changes are visible to all
-          members.
+          Update the workspace name and logo. Changes are visible to every
+          member.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -320,6 +320,7 @@ export function WorkspaceSettingsForm({
             <div>
               <Button
                 type="submit"
+                variant={isDirty ? "default" : "outline"}
                 disabled={isPending || !isDirty}
                 className="min-w-32"
               >

@@ -29,20 +29,45 @@ export default async function OnboardingPage() {
     redirect("/dashboard");
   }
 
-  // Full-screen dark layout (matching the landing page) with the
-  // product link on top and the centered creation form below.
+  // Onboarding uses the same chart-table frame as the entry forms.
   return (
-    <div className="flex min-h-svh w-full flex-col items-center justify-center gap-8 bg-[#0a0e1a] px-4 py-16">
+    <div className="relative flex min-h-svh w-full flex-col items-center justify-center gap-8 px-4 py-16">
+      <div className="graticule pointer-events-none absolute inset-0 opacity-40" />
+
       {/* Brand mark links back to the marketing home. */}
       <Link
         href="/"
-        className="text-xl font-bold text-white"
-        style={{ fontFamily: "var(--font-display)" }}
+        className="relative flex items-baseline gap-3"
+        aria-label="Trackr home"
       >
-        Trackr
+        <span className="text-[14px] font-bold tracking-[0.22em] uppercase">
+          Trackr
+        </span>
+        <span className="text-muted-foreground font-mono text-[11px] tracking-[0.18em] uppercase">
+          Chart table
+        </span>
       </Link>
-      <div className="animate-fade-in-up flex w-full justify-center">
+
+      <div className="relative flex w-full justify-center">
         <CreateWorkspaceForm />
+      </div>
+
+      <div className="relative flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+        {[
+          { label: "Backlog", tone: "var(--status-backlog)" },
+          { label: "Todo", tone: "var(--status-todo)" },
+          { label: "In progress", tone: "var(--status-progress)" },
+          { label: "Done", tone: "var(--status-done)" },
+        ].map((sector) => (
+          <span key={sector.label} className="flex items-center gap-2">
+            <span
+              className="size-1.5 rounded-[1px]"
+              style={{ background: sector.tone }}
+              aria-hidden
+            />
+            <span className="chart-label">{sector.label}</span>
+          </span>
+        ))}
       </div>
     </div>
   );

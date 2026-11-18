@@ -37,26 +37,26 @@ export function SideHeader() {
 
   return (
     // Clicking the header opens workspace settings (rename/logo).
-    <SidebarHeader>
+    <SidebarHeader className="border-sidebar-border border-b p-0">
       <Link
         // Tooltip title only when a workspace is loaded.
         href="/dashboard/settings"
         onClick={handleLinkClick}
         title={activeWorkspace ? `${activeWorkspace.name} settings` : undefined}
-        className={`flex items-center px-2 py-1 group-data-[collapsible=icon]:px-0 ${
+        className={`hover:bg-sidebar-accent flex h-12 items-center gap-2.5 rounded-[2px] px-2 transition-colors group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 ${
           isCollapsed ? "justify-center" : ""
         }`}
       >
         {/* Logo image when available; the fallback shows the first
             letter of the workspace name (empty while loading). */}
-        <Avatar className="size-8 shrink-0 rounded-lg">
+        <Avatar className="border-sidebar-border size-8 shrink-0 rounded-[2px] border">
           {activeWorkspace?.logoUrl ? (
             <AvatarImage
               src={activeWorkspace.logoUrl}
               alt={`${activeWorkspace.name} logo`}
             />
           ) : null}
-          <AvatarFallback className="rounded-lg text-xs font-semibold">
+          <AvatarFallback className="bg-sidebar-primary/12 text-sidebar-primary rounded-[2px] font-mono text-xs font-semibold">
             {isLoading
               ? ""
               : (activeWorkspace?.name.charAt(0).toUpperCase() ?? "")}
@@ -65,11 +65,16 @@ export function SideHeader() {
         {/* Workspace name, hidden entirely in the collapsed sidebar
             (the avatar alone remains centered). */}
         <span
-          className={`ml-2 truncate text-xl font-semibold text-gray-900 transition-opacity duration-200 ${
+          className={`flex min-w-0 flex-col transition-opacity duration-200 ${
             isCollapsed ? "hidden opacity-0" : "opacity-100"
           }`}
         >
-          {activeWorkspace?.name ?? ""}
+          <span className="text-sidebar-foreground truncate text-[13px] leading-tight font-semibold">
+            {activeWorkspace?.name ?? ""}
+          </span>
+          <span className="text-muted-foreground font-mono text-[11px] tracking-[0.16em] uppercase">
+            Workspace
+          </span>
         </span>
       </Link>
     </SidebarHeader>

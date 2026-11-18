@@ -241,7 +241,7 @@ export function MembersList({ workspaceId }: WorkspaceId) {
               <div className="flex shrink-0 items-center gap-2">
                 {/* Owner row: a fixed badge — immune to everything. */}
                 {member.role === "owner" ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
+                  <span className="border-priority-high/40 bg-priority-high/10 text-priority-high inline-flex items-center gap-1 rounded-[2px] border px-2 py-0.5 text-[11px] font-medium">
                     <ShieldIcon className="size-3" />
                     Owner
                   </span>

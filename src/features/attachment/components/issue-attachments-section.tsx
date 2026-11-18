@@ -169,7 +169,7 @@ export function IssueAttachmentsSection({
             return (
               <li
                 key={attachment.id}
-                className="flex items-center gap-2 rounded-md border border-slate-100 bg-slate-50/70 px-2.5 py-2 text-sm dark:border-slate-800/80 dark:bg-slate-900/50"
+                className="border-border bg-muted/40 flex items-center gap-2 rounded-[2px] border px-2.5 py-2 text-[13px]"
               >
                 <PaperclipIcon className="text-muted-foreground size-3.5 shrink-0" />
 
@@ -179,7 +179,7 @@ export function IssueAttachmentsSection({
                     target="_blank"
                     rel="noopener noreferrer"
                     download={attachment.filename}
-                    className="block truncate font-medium text-slate-900 hover:underline dark:text-slate-100"
+                    className="block truncate font-medium hover:underline"
                     title={attachment.filename}
                   >
                     {shortenFilename(attachment.filename)}

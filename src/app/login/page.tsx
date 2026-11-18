@@ -1,3 +1,4 @@
+import { AuthShell } from "@/components/auth-shell";
 import { LoginForm } from "@/features/user/components/login-form";
 import { authGuard } from "@/features/user/guards/auth-guard";
 import { redirect } from "next/navigation";
@@ -10,10 +11,8 @@ export default async function Page() {
   }
 
   return (
-    <div className="flex min-h-svh w-full items-center justify-center">
-      <div className="w-full max-w-sm">
-        <LoginForm />
-      </div>
-    </div>
+    <AuthShell>
+      <LoginForm />
+    </AuthShell>
   );
 }

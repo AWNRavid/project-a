@@ -31,7 +31,7 @@ export function CommentEditor({
     editorProps: {
       attributes: {
         class:
-          "min-h-[80px] max-h-[220px] overflow-y-auto px-3 py-2.5 text-sm focus:outline-none text-slate-900 dark:text-slate-100",
+          "min-h-[80px] max-h-[220px] overflow-y-auto px-3 py-2.5 text-[13px] focus:outline-none text-foreground",
       },
     },
   });
@@ -64,14 +64,14 @@ export function CommentEditor({
   };
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white shadow-xs focus-within:border-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:focus-within:border-slate-600">
+    <div className="border-border bg-card focus-within:border-ring rounded-[3px] border transition-colors">
       {/* Formatting Toolbar */}
-      <div className="flex flex-wrap items-center gap-0.5 border-b border-slate-100 bg-slate-50/70 p-1.5 dark:border-slate-800 dark:bg-slate-900/60">
+      <div className="border-border bg-muted/40 flex flex-wrap items-center gap-0.5 border-b p-1.5">
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          className={`h-7 w-7 p-0 ${editorState?.isBold ? "bg-slate-200 dark:bg-slate-800" : ""}`}
+          className={`h-7 w-7 p-0 ${editorState?.isBold ? "bg-accent" : ""}`}
           onClick={() => editor.chain().focus().toggleBold().run()}
           title="Bold"
         >
@@ -81,7 +81,7 @@ export function CommentEditor({
           type="button"
           variant="ghost"
           size="sm"
-          className={`h-7 w-7 p-0 ${editorState?.isItalic ? "bg-slate-200 dark:bg-slate-800" : ""}`}
+          className={`h-7 w-7 p-0 ${editorState?.isItalic ? "bg-accent" : ""}`}
           onClick={() => editor.chain().focus().toggleItalic().run()}
           title="Italic"
         >
@@ -91,18 +91,18 @@ export function CommentEditor({
           type="button"
           variant="ghost"
           size="sm"
-          className={`h-7 w-7 p-0 ${editorState?.isStrike ? "bg-slate-200 dark:bg-slate-800" : ""}`}
+          className={`h-7 w-7 p-0 ${editorState?.isStrike ? "bg-accent" : ""}`}
           onClick={() => editor.chain().focus().toggleStrike().run()}
           title="Strikethrough"
         >
           <StrikethroughIcon className="size-3.5" />
         </Button>
-        <div className="mx-1 h-4 w-px bg-slate-200 dark:bg-slate-800" />
+        <div className="bg-border mx-1 h-4 w-px" />
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          className={`h-7 w-7 p-0 ${editorState?.isBulletList ? "bg-slate-200 dark:bg-slate-800" : ""}`}
+          className={`h-7 w-7 p-0 ${editorState?.isBulletList ? "bg-accent" : ""}`}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           title="Bullet List"
         >
@@ -112,7 +112,7 @@ export function CommentEditor({
           type="button"
           variant="ghost"
           size="sm"
-          className={`h-7 w-7 p-0 ${editorState?.isOrderedList ? "bg-slate-200 dark:bg-slate-800" : ""}`}
+          className={`h-7 w-7 p-0 ${editorState?.isOrderedList ? "bg-accent" : ""}`}
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
           title="Numbered List"
         >
@@ -122,7 +122,7 @@ export function CommentEditor({
           type="button"
           variant="ghost"
           size="sm"
-          className={`h-7 w-7 p-0 ${editorState?.isBlockquote ? "bg-slate-200 dark:bg-slate-800" : ""}`}
+          className={`h-7 w-7 p-0 ${editorState?.isBlockquote ? "bg-accent" : ""}`}
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
           title="Quote"
         >
@@ -132,7 +132,7 @@ export function CommentEditor({
           type="button"
           variant="ghost"
           size="sm"
-          className={`h-7 w-7 p-0 ${editorState?.isCode ? "bg-slate-200 dark:bg-slate-800" : ""}`}
+          className={`h-7 w-7 p-0 ${editorState?.isCode ? "bg-accent" : ""}`}
           onClick={() => editor.chain().focus().toggleCode().run()}
           title="Inline Code"
         >
@@ -146,7 +146,7 @@ export function CommentEditor({
       </div>
 
       {/* Editor Action Footer */}
-      <div className="flex items-center justify-between border-t border-slate-100 px-3 py-2 dark:border-slate-800">
+      <div className="border-border flex items-center justify-between border-t px-3 py-2">
         <span className="text-muted-foreground text-xs">
           Rich text supported
         </span>

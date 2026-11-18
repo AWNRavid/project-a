@@ -12,74 +12,75 @@ interface IssueStatusBadgeProps {
   className?: string;
 }
 
+/**
+ * Status reads as a chart annotation: a shape for the class, a word for the
+ * meaning, and the sector colour for the scan. Shape carries it without colour.
+ */
 const statusConfig: Record<
   IssueStatus,
   {
     label: string;
     icon: typeof CircleIcon;
-    badgeClass: string;
-    iconClass: string;
+    tone: string;
   }
 > = {
   backlog: {
     label: "Backlog",
     icon: CircleDashedIcon,
-    badgeClass:
-      "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
-    iconClass: "text-slate-500",
+    tone: "border-status-backlog/35 bg-status-backlog/8 text-status-backlog",
   },
   todo: {
     label: "Todo",
     icon: CircleIcon,
-    badgeClass:
-      "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800",
-    iconClass: "text-blue-500",
+    tone: "border-status-todo/35 bg-status-todo/8 text-status-todo",
   },
   in_progress: {
-    label: "In Progress",
+    label: "In progress",
     icon: CircleDotIcon,
-    badgeClass:
-      "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800",
-    iconClass: "text-amber-500",
+    tone: "border-status-progress/35 bg-status-progress/8 text-status-progress",
   },
   done: {
     label: "Done",
     icon: CheckCircle2Icon,
-    badgeClass:
-      "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800",
-    iconClass: "text-emerald-500",
+    tone: "border-status-done/35 bg-status-done/8 text-status-done",
   },
   cancelled: {
     label: "Cancelled",
     icon: XCircleIcon,
-    badgeClass:
-      "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800",
-    iconClass: "text-rose-500",
+    tone: "border-status-cancelled/35 bg-status-cancelled/8 text-status-cancelled",
   },
 };
 
-/**
- * Standard visual indicator badge for issue statuses.
- */
-export function IssueStatusBadge({ status, className }: IssueStatusBadgeProps) {
+export function IssueStatusBadge({
+  status,
+  className,
+}: IssueStatusBadgeProps) {
   const config =
     status in statusConfig
       ? statusConfig[status as IssueStatus]
       : {
           label: status,
           icon: CircleIcon,
-          badgeClass: "bg-slate-100 text-slate-700 border-slate-200",
-          iconClass: "text-slate-500",
+          tone: "border-border text-muted-foreground",
         };
 
   const IconComponent = config.icon;
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium ${config.badgeClass} ${className ?? ""}`}
+      className={`inline-flex items-center gap-1.5 rounded-[2px] border px-1.5 py-0.5 text-[11px] leading-none font-medium tracking-wide whitespace-nowrap ${config.tone} ${className ?? ""}`}
     >
-      <IconComponent className={`size-3.5 ${config.iconClass}`} />
+      <IconComponent className="size-3" aria-hidden />
       <span>{config.label}</span>
     </span>
   );
 }
+
+/** The bare token for a status, used for rails and borders. */
+export const statusTone: Record<IssueStatus, string> = {
+  backlog: "text-status-backlog",
+  todo: "text-status-todo",
+  in_progress: "text-status-progress",
+  done: "text-status-done",
+  cancelled: "text-status-cancelled",
+};

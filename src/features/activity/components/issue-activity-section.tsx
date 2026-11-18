@@ -116,14 +116,14 @@ export function IssueActivitySection({ issueId }: IssueActivitySectionProps) {
                       alt={activity.actorName ?? "Avatar"}
                     />
                   ) : null}
-                  <AvatarFallback className="text-[10px] font-semibold">
+                  <AvatarFallback className="text-[11px] font-semibold">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
 
                 <div className="min-w-0 flex-1">
                   <p className="leading-snug">
-                    <span className="font-semibold text-slate-900 dark:text-slate-100">
+                    <span className="font-semibold">
                       {activity.actorName ?? activity.actorEmail ?? "Member"}
                     </span>{" "}
                     <span className="text-muted-foreground">

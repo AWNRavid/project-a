@@ -19,30 +19,26 @@ import { BoardIssueCard } from "./board-issue-card";
 import { CreateIssueDialog } from "./create-issue-dialog";
 import { IssueDetailDialog } from "./issue-detail-dialog";
 
-const COLUMNS: { status: IssueStatus; label: string; headerClass: string }[] = [
+const COLUMNS: { status: IssueStatus; label: string; tone: string }[] = [
   {
     status: "backlog",
     label: "Backlog",
-    headerClass:
-      "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+    tone: "var(--status-backlog)",
   },
   {
     status: "todo",
     label: "Todo",
-    headerClass:
-      "bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400",
+    tone: "var(--status-todo)",
   },
   {
     status: "in_progress",
-    label: "In Progress",
-    headerClass:
-      "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400",
+    label: "In progress",
+    tone: "var(--status-progress)",
   },
   {
     status: "done",
     label: "Done",
-    headerClass:
-      "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400",
+    tone: "var(--status-done)",
   },
 ];
 
@@ -248,22 +244,19 @@ export function IssueBoard({
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-lg border border-rose-200 bg-rose-50 p-6 text-center text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300">
-        <AlertCircleIcon className="mb-2 size-8 text-rose-600 dark:text-rose-400" />
-        <h3 className="text-sm font-semibold">Failed to load issues</h3>
-        <p className="mt-1 max-w-sm text-xs text-rose-700 dark:text-rose-400">
-          {error instanceof Error
-            ? error.message
-            : "An unexpected error occurred."}
-        </p>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onRetry}
-          className="mt-4 border-rose-300 bg-white hover:bg-rose-100 dark:border-rose-800 dark:bg-slate-900"
-        >
+      <div className="border-destructive/40 bg-destructive/8 flex flex-col items-start gap-3 rounded-[3px] border p-6">
+        <AlertCircleIcon className="text-destructive size-5" />
+        <div>
+          <h3 className="text-[14px] font-semibold">Issues did not load</h3>
+          <p className="text-muted-foreground mt-1 max-w-prose text-[12px]">
+            {error instanceof Error
+              ? error.message
+              : "An unexpected error occurred."}
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={onRetry}>
           <RefreshCwIcon className="mr-1.5 size-3.5" />
-          Retry
+          Try again
         </Button>
       </div>
     );
@@ -276,20 +269,28 @@ export function IssueBoard({
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-4 overflow-x-auto pb-4">
-          {COLUMNS.map((col) => (
-            <BoardColumn
-              key={col.status}
-              status={col.status}
-              label={col.label}
-              headerClass={col.headerClass}
-              issues={
-                isLoading ? [] : resolveIssues(board[col.status], issuesById)
-              }
-              onCardClick={setSelectedForDetail}
-              onCreateClick={setCreateForStatus}
-            />
-          ))}
+        {/* The chart table: sectors sit on the graticule, not on flat ink. */}
+        <div className="relative">
+          <div
+            className="graticule pointer-events-none absolute inset-0 opacity-40"
+            aria-hidden
+          />
+          <div className="relative flex gap-4 overflow-x-auto pb-4">
+            {COLUMNS.map((col) => (
+              <BoardColumn
+                key={col.status}
+                status={col.status}
+                label={col.label}
+                tone={col.tone}
+                isLoading={isLoading}
+                issues={
+                  isLoading ? [] : resolveIssues(board[col.status], issuesById)
+                }
+                onCardClick={setSelectedForDetail}
+                onCreateClick={setCreateForStatus}
+              />
+            ))}
+          </div>
         </div>
 
         {/* Drag overlay — renders a floating copy of the dragged card */}

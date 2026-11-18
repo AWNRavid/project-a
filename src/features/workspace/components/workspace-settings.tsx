@@ -1,13 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 // Tabs for the Members / Pending invites switch.
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -90,18 +83,18 @@ export function WorkspaceSettings() {
 
       {/* Team section: two tabs — members and pending invitations, plus
           the invite trigger reachable from both tabs. */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+      <div className="border-border overflow-hidden rounded-[3px] border">
+        <div className="border-border flex flex-row items-center justify-between gap-4 border-b px-5 py-4">
           <div>
-            <CardTitle>Team</CardTitle>
-            <CardDescription>
-              Manage members, roles, and invitations.
-            </CardDescription>
+            <h2 className="text-[15px] font-semibold tracking-tight">Team</h2>
+            <p className="text-muted-foreground mt-0.5 text-[12px]">
+              Manage members, roles and invitations.
+            </p>
           </div>
           {/* Owner/admin-only dialog; the server enforces the roles. */}
           <InviteMemberDialog workspaceId={workspace.id} />
-        </CardHeader>
-        <CardContent>
+        </div>
+        <div className="p-5">
           {/* Tabs switch between the member list and pending invites. */}
           <Tabs defaultValue="members">
             <TabsList>
@@ -117,8 +110,8 @@ export function WorkspaceSettings() {
               <PendingInvitesList workspaceId={workspace.id} />
             </TabsContent>
           </Tabs>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Owner-only destructive block, hidden from the UI for
           non-owners (the delete route re-checks ownership anyway). */}

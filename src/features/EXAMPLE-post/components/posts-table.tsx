@@ -266,15 +266,15 @@ export function PostsTable() {
         ),
         cell: ({ row }) => (
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50">
-              <FileText className="h-5 w-5 text-blue-600" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+              <FileText className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-900">
+              <p className="text-sm font-semibold text-foreground">
                 {row.original.title}
               </p>
               {row.original.description && (
-                <p className="mt-1 line-clamp-1 text-xs text-slate-500">
+                <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
                   {row.original.description}
                 </p>
               )}
@@ -295,7 +295,7 @@ export function PostsTable() {
         cell: ({ getValue }) => {
           const date = getValue() as Date;
           return (
-            <span className="text-sm text-slate-600">
+            <span className="text-sm text-muted-foreground">
               {new Date(date).toLocaleDateString("en-US", {
                 year: "numeric",
                 month: "short",
@@ -318,7 +318,7 @@ export function PostsTable() {
         cell: ({ getValue }) => {
           const date = getValue() as Date;
           return (
-            <span className="text-sm text-slate-600">
+            <span className="text-sm text-muted-foreground">
               {new Date(date).toLocaleDateString("en-US", {
                 year: "numeric",
                 month: "short",
@@ -341,7 +341,7 @@ export function PostsTable() {
                     variant="ghost"
                     size="icon"
                     onClick={() => handleEditClick(post)}
-                    className="text-blue-600 transition-transform hover:scale-105 hover:text-blue-700"
+                    className="text-primary transition-transform hover:scale-105 hover:text-primary"
                   >
                     <EditIcon className="h-4 w-4" />
                   </Button>
@@ -354,7 +354,7 @@ export function PostsTable() {
                     variant="ghost"
                     size="icon"
                     onClick={() => handleDeleteClick(post)}
-                    className="text-red-600 transition-transform hover:scale-105 hover:text-red-700"
+                    className="text-destructive transition-transform hover:scale-105 hover:text-red-700"
                   >
                     <TrashIcon className="h-4 w-4" />
                   </Button>
@@ -406,12 +406,12 @@ export function PostsTable() {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <header className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between sm:p-6">
+      <header className="flex flex-col gap-4 rounded-[3px] border border-border bg-card p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div className="min-w-0 flex-1">
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl lg:text-3xl">
+          <h1 className="text-xl font-bold text-foreground sm:text-2xl lg:text-3xl">
             Posts
           </h1>
-          <p className="mt-1 text-sm text-gray-600 sm:mt-2">
+          <p className="mt-1 text-sm text-muted-foreground sm:mt-2">
             Manage your blog posts and content.
           </p>
         </div>
@@ -426,11 +426,11 @@ export function PostsTable() {
         </div>
       </header>
 
-      <section className="rounded-xl border border-slate-200 bg-white shadow-xs">
+      <section className="rounded-[3px] border border-border bg-card shadow-xs">
         <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
           <div />
           <div className="relative w-full sm:max-w-md sm:flex-1 lg:max-w-lg">
-            <SearchIcon className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <SearchIcon className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search posts..."
               value={search}
@@ -441,7 +441,7 @@ export function PostsTable() {
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
               >
                 <XIcon className="h-4 w-4" />
               </button>
@@ -451,7 +451,7 @@ export function PostsTable() {
 
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="border-y border-slate-200 bg-slate-50 text-left text-xs tracking-wide">
+            <thead className="border-y border-border bg-muted/50 text-left text-xs tracking-wide">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
@@ -470,7 +470,7 @@ export function PostsTable() {
                 </tr>
               ))}
             </thead>
-            <tbody className="divide-y divide-slate-200 bg-white">
+            <tbody className="divide-y divide-border bg-card">
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, index) => (
                   <tr key={index}>
@@ -501,7 +501,7 @@ export function PostsTable() {
                 <tr>
                   <td
                     colSpan={columns.length}
-                    className="px-4 py-16 text-center text-sm text-red-600 sm:px-6 sm:py-20"
+                    className="px-4 py-16 text-center text-sm text-destructive sm:px-6 sm:py-20"
                   >
                     <div className="flex flex-col items-center gap-3">
                       <AlertTriangle className="h-6 w-6" />
@@ -516,11 +516,11 @@ export function PostsTable() {
                     className="px-4 py-16 text-center sm:px-6 sm:py-20"
                   >
                     <div className="flex flex-col items-center gap-2">
-                      <FileText className="h-12 w-12 text-gray-300" />
-                      <p className="text-sm font-medium text-gray-500">
+                      <FileText className="h-12 w-12 text-muted-foreground/50" />
+                      <p className="text-sm font-medium text-muted-foreground">
                         {search ? "No posts found" : "No posts yet"}
                       </p>
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-muted-foreground">
                         {search
                           ? "Try adjusting your search terms."
                           : "Create your first post to get started."}
@@ -530,7 +530,7 @@ export function PostsTable() {
                 </tr>
               ) : (
                 table.getRowModel().rows.map((row) => (
-                  <tr key={row.id} className="transition hover:bg-slate-50">
+                  <tr key={row.id} className="transition hover:bg-muted/50">
                     {row.getVisibleCells().map((cell) => (
                       <td key={cell.id} className="px-4 py-4">
                         {flexRender(
@@ -546,15 +546,15 @@ export function PostsTable() {
           </table>
         </div>
 
-        <div className="flex flex-col gap-4 border-t border-slate-200 p-4 lg:flex-row lg:items-center lg:justify-between lg:p-6">
-          <div className="text-center text-sm text-gray-600 lg:text-left">
+        <div className="flex flex-col gap-4 border-t border-border p-4 lg:flex-row lg:items-center lg:justify-between lg:p-6">
+          <div className="text-center text-sm text-muted-foreground lg:text-left">
             Showing {startItem} - {endItem} of {totalCount} post
             {totalCount !== 1 ? "s" : ""}
           </div>
 
           <div className="flex flex-col items-center gap-3 lg:flex-row lg:gap-2">
             <div className="flex items-center gap-2">
-              <span className="text-sm whitespace-nowrap text-gray-600">
+              <span className="text-sm whitespace-nowrap text-muted-foreground">
                 Rows per page:
               </span>
               <Select
@@ -794,8 +794,8 @@ export function PostsTable() {
         <DialogContent className="max-w-lg">
           <DialogHeader className="space-y-3">
             <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-100">
-                <AlertTriangle className="h-6 w-6 text-red-600" />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-destructive/10">
+                <AlertTriangle className="h-6 w-6 text-destructive" />
               </div>
               <div className="flex-1 space-y-1">
                 <DialogTitle className="text-xl">Delete Post?</DialogTitle>
@@ -808,26 +808,26 @@ export function PostsTable() {
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-4">
+            <div className="rounded-lg border border-border bg-muted/40 p-4">
               <div className="space-y-2">
-                <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">
+                <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                   Post to be deleted
                 </p>
-                <p className="text-base font-semibold text-gray-900">
+                <p className="text-base font-semibold text-foreground">
                   {postToDelete?.title || "-"}
                 </p>
                 {postToDelete?.description && (
-                  <p className="text-sm text-slate-600">
+                  <p className="text-sm text-muted-foreground">
                     {postToDelete.description}
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="rounded-lg border border-red-200 bg-red-50 p-3.5">
+            <div className="rounded-lg border border-destructive/40 bg-destructive/8 p-3.5">
               <div className="flex gap-3">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
-                <p className="text-sm text-red-900">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                <p className="text-sm text-destructive">
                   This will permanently delete the post and all associated data.
                   This action cannot be undone.
                 </p>

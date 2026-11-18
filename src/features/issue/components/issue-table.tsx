@@ -236,7 +236,7 @@ export function IssueTable({
             onClick={() => setSelectedIssueForDetail(row.original)}
             className="group flex max-w-[340px] flex-col text-left"
           >
-            <span className="group-hover:text-primary truncate text-sm font-medium text-slate-900 group-hover:underline dark:text-slate-100">
+            <span className="group-hover:text-primary truncate text-[13px] font-medium group-hover:underline">
               {row.original.title}
             </span>
             {row.original.description && (
@@ -244,6 +244,12 @@ export function IssueTable({
                 {row.original.description}
               </span>
             )}
+            {/* Below sm the status and priority columns scroll off-screen;
+                surface them under the title so the record stays readable. */}
+            <span className="mt-1 flex flex-wrap items-center gap-2 sm:hidden">
+              <IssueStatusBadge status={row.original.status as IssueStatus} />
+              <IssuePriorityBadge priority={row.original.priority} />
+            </span>
           </button>
         ),
         sortingFn: (rowA, rowB) =>
@@ -318,7 +324,7 @@ export function IssueTable({
             <div className="flex items-center gap-2">
               <Avatar className="size-6">
                 {assigneeImage ? <AvatarImage src={assigneeImage} /> : null}
-                <AvatarFallback className="text-[10px]">
+                <AvatarFallback className="text-[11px]">
                   {(assigneeName ?? "U").slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
@@ -364,7 +370,7 @@ export function IssueTable({
             <span
               className={`inline-flex items-center gap-1 text-xs ${
                 isOverdue
-                  ? "font-semibold text-rose-600 dark:text-rose-400"
+                  ? "text-destructive font-semibold"
                   : "text-muted-foreground"
               }`}
             >
@@ -575,7 +581,7 @@ export function IssueTable({
           )}
         </div>
 
-        {/* Create Issue Trigger */}
+        {/* Create issue Trigger */}
         <CreateIssueDialog
           projectId={projectId}
           workspaceId={workspaceId}
@@ -585,10 +591,10 @@ export function IssueTable({
       </div>
 
       {/* Main Table Container */}
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-950">
+      <div className="border-border overflow-hidden rounded-[3px] border">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="text-muted-foreground border-b border-slate-200 bg-slate-50 text-xs font-semibold tracking-wider uppercase dark:border-slate-800 dark:bg-slate-900/50">
+            <thead className="text-muted-foreground border-border bg-muted/50 border-b text-[11px] font-semibold tracking-[0.14em] uppercase">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
@@ -605,7 +611,7 @@ export function IssueTable({
               ))}
             </thead>
 
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+            <tbody className="divide-border divide-y">
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, index) => (
                   <tr key={index} className="animate-pulse">
@@ -639,7 +645,7 @@ export function IssueTable({
                     className="text-muted-foreground py-12 text-center"
                   >
                     <div className="flex flex-col items-center justify-center gap-3">
-                      <div className="rounded-full bg-slate-100 p-3 dark:bg-slate-800">
+                      <div className="bg-muted rounded-full p-3">
                         <CheckCircleIcon className="text-muted-foreground size-6" />
                       </div>
                       <div className="space-y-1">
@@ -662,7 +668,7 @@ export function IssueTable({
                           className="mt-1"
                         >
                           <PlusIcon className="mr-1.5 size-4" />
-                          Create Issue
+                          Create issue
                         </Button>
                       )}
                     </div>
@@ -672,7 +678,7 @@ export function IssueTable({
                 table.getRowModel().rows.map((row) => (
                   <tr
                     key={row.id}
-                    className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-900/50"
+                    className="hover:bg-muted/40 transition-colors"
                   >
                     {row.getVisibleCells().map((cell) => (
                       <td key={cell.id} className="px-4 py-3">
@@ -690,7 +696,7 @@ export function IssueTable({
         </div>
 
         {/* Footer & Pagination */}
-        <div className="text-muted-foreground flex flex-col gap-3 border-t border-slate-200 px-4 py-3 text-xs sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
+        <div className="text-muted-foreground border-border flex flex-col gap-3 border-t px-4 py-3 text-[11px] sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <span>
               Showing {startItem} to {endItem} of {totalFilteredCount} issues

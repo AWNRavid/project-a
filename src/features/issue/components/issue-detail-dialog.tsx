@@ -51,7 +51,7 @@ export function IssueDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[650px]">
+      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[720px]">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground font-mono text-xs font-semibold tracking-wider uppercase">
@@ -60,7 +60,7 @@ export function IssueDetailDialog({
             <IssueStatusBadge status={issue.status} />
             <IssuePriorityBadge priority={issue.priority} />
           </div>
-          <DialogTitle className="pt-1 text-xl leading-snug font-bold">
+          <DialogTitle className="pt-1 text-[19px] leading-snug font-semibold tracking-tight">
             {issue.title}
           </DialogTitle>
         </DialogHeader>
@@ -68,11 +68,11 @@ export function IssueDetailDialog({
         <div className="space-y-5 py-2">
           {/* Issue Description */}
           <div>
-            <h4 className="text-muted-foreground mb-1.5 text-xs font-semibold tracking-wider uppercase">
+            <h4 className="chart-label mb-1.5">
               Description
             </h4>
             {issue.description ? (
-              <div className="rounded-md border bg-slate-50/50 p-3 text-sm leading-relaxed whitespace-pre-wrap text-slate-800 dark:bg-slate-900/50 dark:text-slate-200">
+              <div className="border-border bg-muted/40 rounded-[2px] border p-3 text-[13px] leading-relaxed whitespace-pre-wrap">
                 {issue.description}
               </div>
             ) : (
@@ -87,7 +87,7 @@ export function IssueDetailDialog({
           {/* Properties Grid */}
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="space-y-1">
-              <span className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase">
+              <span className="chart-label flex items-center gap-1.5">
                 <UserIcon className="size-3.5" /> Assignee
               </span>
               <div className="flex items-center gap-2 pt-0.5">
@@ -97,11 +97,11 @@ export function IssueDetailDialog({
                       {issue.assigneeImage ? (
                         <AvatarImage src={issue.assigneeImage} />
                       ) : null}
-                      <AvatarFallback className="text-[10px]">
+                      <AvatarFallback className="text-[11px]">
                         {(issue.assigneeName ?? "U").slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="font-medium text-slate-900 dark:text-slate-100">
+                    <span className="font-medium">
                       {issue.assigneeName ?? "Unnamed member"}
                     </span>
                   </>
@@ -114,28 +114,28 @@ export function IssueDetailDialog({
             </div>
 
             <div className="space-y-1">
-              <span className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase">
+              <span className="chart-label flex items-center gap-1.5">
                 <CalendarIcon className="size-3.5" /> Due Date
               </span>
-              <p className="pt-0.5 font-medium text-slate-900 dark:text-slate-100">
+              <p className="tabular pt-0.5 font-medium">
                 {formatDate(issue.dueDate)}
               </p>
             </div>
 
             <div className="space-y-1">
-              <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+              <span className="chart-label">
                 Created
               </span>
-              <p className="text-muted-foreground pt-0.5 text-xs">
+              <p className="text-muted-foreground tabular pt-0.5 text-[11px]">
                 {formatDate(issue.createdAt)}
               </p>
             </div>
 
             <div className="space-y-1">
-              <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+              <span className="chart-label">
                 Updated
               </span>
-              <p className="text-muted-foreground pt-0.5 text-xs">
+              <p className="text-muted-foreground tabular pt-0.5 text-[11px]">
                 {formatDate(issue.updatedAt)}
               </p>
             </div>

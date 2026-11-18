@@ -166,39 +166,31 @@ export function CreateWorkspaceForm() {
   const isPending = createWorkspaceMutation.isPending;
 
   return (
-    // Centered card in the dark onboarding palette (matches the
-    // landing page).
-    <div className="w-full max-w-md">
-      <div className="rounded-2xl border border-white/10 bg-[#111827] p-8 shadow-2xl">
-        {/* Badge, title (display font), and a one-line description. */}
-        <div className="mb-6 text-center">
-          <p className="animate-fade-in-up mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
-            Get started
-          </p>
-          <h1
-            className="text-2xl font-bold tracking-tight text-white"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
+    // One panel on the onboarding chart: logo, name, create.
+    <div className="w-full max-w-[420px]">
+      <div className="border-border bg-card overflow-hidden rounded-[3px] border">
+        <div className="border-border border-b px-6 py-5">
+          <h1 className="text-[20px] leading-tight font-semibold tracking-tight">
             Create your workspace
           </h1>
-          <p className="mt-2 text-sm leading-relaxed text-slate-400">
-            A workspace is where your team, projects, and issues live.
+          <p className="text-muted-foreground mt-1 text-[13px] leading-relaxed">
+            A workspace holds your team, projects and issues. You will be its
+            owner.
           </p>
         </div>
 
         {/* shadcn Form provider shares the RHF instance; handleSubmit
             runs validation before onSubmit. */}
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Logo uploader: the round button opens the hidden file
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 p-6">
+            {/* Logo uploader: the square button opens the hidden file
                 input via ref. */}
             <div className="flex items-center gap-4">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 aria-label="Choose workspace logo"
-                className="group relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-dashed border-white/20 bg-white/5 transition-colors hover:border-blue-500/50 hover:bg-blue-500/10"
+                className="group border-border bg-muted/40 hover:border-primary/50 relative flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-[2px] border border-dashed transition-colors"
               >
                 {/* Blob preview; unoptimized skips the next/image
                     pipeline (blob/MinIO URLs need no optimization). */}
@@ -206,18 +198,18 @@ export function CreateWorkspaceForm() {
                   <Image
                     src={logoPreviewUrl}
                     alt="Workspace logo preview"
-                    width={64}
-                    height={64}
+                    width={56}
+                    height={56}
                     unoptimized
                     className="size-full object-cover"
                   />
                 ) : (
-                  <ImagePlusIcon className="size-6 text-slate-400 transition-colors group-hover:text-blue-400" />
+                  <ImagePlusIcon className="text-muted-foreground group-hover:text-primary size-5 transition-colors" />
                 )}
               </button>
-              <div className="min-w-0 text-sm">
+              <div className="min-w-0 text-[13px]">
                 <div className="flex items-center gap-2">
-                  <p className="font-medium text-slate-200">Workspace logo</p>
+                  <p className="font-medium">Workspace logo</p>
                   {/* Visible only while a logo is pending; removes it
                       before submit. */}
                   {logoFile && (
@@ -225,14 +217,14 @@ export function CreateWorkspaceForm() {
                       type="button"
                       onClick={removeLogo}
                       aria-label="Remove workspace logo"
-                      className="inline-flex size-5 items-center justify-center rounded-full bg-white/10 text-slate-300 transition-colors hover:bg-white/20 hover:text-white"
+                      className="bg-muted text-muted-foreground hover:bg-accent hover:text-foreground inline-flex size-5 items-center justify-center rounded-[2px] transition-colors"
                     >
                       <XIcon className="size-3" />
                     </button>
                   )}
                 </div>
-                <p className="mt-0.5 text-slate-500">
-                  Optional. PNG, JPEG, WebP, GIF, or SVG up to 2MB.
+                <p className="text-muted-foreground mt-0.5 text-[11px]">
+                  Optional. PNG, JPEG, WebP, GIF or SVG up to 2MB.
                 </p>
               </div>
             </div>
@@ -253,15 +245,9 @@ export function CreateWorkspaceForm() {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-slate-200">
-                    Workspace name
-                  </FormLabel>
+                  <FormLabel className="text-[12px]">Workspace name</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="e.g. Acme Inc"
-                      className="border-white/10 bg-white/5 text-white placeholder:text-slate-500 focus-visible:border-blue-500/50"
-                      {...field}
-                    />
+                    <Input placeholder="e.g. Acme Inc" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -270,11 +256,7 @@ export function CreateWorkspaceForm() {
 
             {/* Disabled while the request is in flight; spinner +
                 progress label while pending. */}
-            <Button
-              type="submit"
-              className="w-full bg-blue-500 text-white hover:bg-blue-600"
-              disabled={isPending}
-            >
+            <Button type="submit" className="w-full" disabled={isPending}>
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isPending ? "Creating workspace..." : "Create workspace"}
             </Button>

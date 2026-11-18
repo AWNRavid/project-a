@@ -1,12 +1,13 @@
 "use client";
 
+import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { IssueBoardView } from "@/features/issue/components/issue-board-view";
 import { IssueListView } from "@/features/issue/components/issue-list-view";
 import { orpcTanstackQueryUtils } from "@/lib/orpc/client";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeftIcon, FolderIcon, KanbanIcon, ListIcon } from "lucide-react";
+import { ChevronRightIcon, KanbanIcon, ListIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -41,80 +42,79 @@ export function ProjectView({ projectId }: ProjectViewProps) {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-4 w-96" />
-        </div>
-        <Skeleton className="h-64 w-full rounded-lg" />
+      <div className="px-6 pt-5">
+        <Skeleton className="h-3 w-28" />
+        <Skeleton className="mt-4 h-7 w-72" />
+        <Skeleton className="mt-2 h-3 w-96" />
+        <Skeleton className="mt-8 h-64 w-full rounded-[3px]" />
       </div>
     );
   }
 
   if (error || !project) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-lg border border-slate-200 bg-white p-12 text-center dark:border-slate-800 dark:bg-slate-950">
-        <FolderIcon className="text-muted-foreground mb-3 size-10" />
-        <h2 className="text-lg font-semibold">Project not found</h2>
-        <p className="text-muted-foreground mt-1 text-sm">
-          The requested project could not be found or you do not have permission
-          to view it.
-        </p>
-        <Button asChild variant="outline" size="sm" className="mt-4">
-          <Link href="/dashboard">
-            <ArrowLeftIcon className="mr-1.5 size-4" />
-            Back to Projects
-          </Link>
-        </Button>
+      <div className="px-6 pt-10">
+        <div className="border-border flex flex-col items-start gap-3 rounded-[3px] border p-6">
+          <div>
+            <h2 className="text-[15px] font-semibold">Project not found</h2>
+            <p className="text-muted-foreground mt-1 max-w-prose text-[13px]">
+              This project could not be read, or your role in the workspace does
+              not cover it.
+            </p>
+          </div>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/dashboard">Back to projects</Link>
+          </Button>
+        </div>
       </div>
     );
   }
 
   const workspaceId = workspace?.id ?? project.workspaceId;
+  const tone =
+    project.status === "completed"
+      ? "var(--status-done)"
+      : project.status === "archived"
+        ? "var(--status-backlog)"
+        : "var(--status-todo)";
 
   return (
-    <div className="space-y-6">
-      {/* Project Overview Header */}
-      <div className="flex flex-col gap-2">
-        <div className="text-muted-foreground flex items-center gap-2 text-xs">
-          <Link
-            href="/dashboard"
-            className="hover:text-foreground flex items-center gap-1 transition-colors"
+    <div className="pb-8">
+      <PageHeader
+        breadcrumb={
+          <>
+            <Link
+              href="/dashboard"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Projects
+            </Link>
+            <ChevronRightIcon className="text-border size-3" aria-hidden />
+            <span className="tabular text-foreground text-[11px] font-medium tracking-[0.08em] uppercase">
+              {project.key}
+            </span>
+            <span
+              className="ml-1 text-[11px] font-semibold tracking-[0.1em] uppercase"
+              style={{ color: tone }}
+            >
+              {project.status}
+            </span>
+          </>
+        }
+        title={project.title}
+        description={project.description || "No description for this project yet."}
+        actions={
+          <div
+            className="border-border flex items-center gap-0.5 rounded-[3px] border p-0.5"
+            role="group"
+            aria-label="View mode"
           >
-            <ArrowLeftIcon className="size-3" />
-            Projects
-          </Link>
-          <span>/</span>
-          <span className="text-foreground font-mono font-semibold uppercase">
-            {project.key}
-          </span>
-        </div>
-
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-                {project.title}
-              </h1>
-              <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 capitalize dark:bg-slate-800 dark:text-slate-300">
-                {project.status}
-              </span>
-            </div>
-            {project.description && (
-              <p className="text-muted-foreground mt-1 text-sm">
-                {project.description}
-              </p>
-            )}
-          </div>
-
-          {/* View mode toggle */}
-          <div className="flex items-center gap-1 rounded-md border border-slate-200 p-0.5 dark:border-slate-700">
             <Button
               variant={viewMode === "list" ? "secondary" : "ghost"}
               size="sm"
-              className="h-7 gap-1.5 px-2 text-xs"
+              className="h-7 gap-1.5 px-2 text-[12px]"
               onClick={() => setViewMode("list")}
+              aria-pressed={viewMode === "list"}
             >
               <ListIcon className="size-3.5" />
               List
@@ -122,22 +122,24 @@ export function ProjectView({ projectId }: ProjectViewProps) {
             <Button
               variant={viewMode === "board" ? "secondary" : "ghost"}
               size="sm"
-              className="h-7 gap-1.5 px-2 text-xs"
+              className="h-7 gap-1.5 px-2 text-[12px]"
               onClick={() => setViewMode("board")}
+              aria-pressed={viewMode === "board"}
             >
               <KanbanIcon className="size-3.5" />
               Board
             </Button>
           </div>
-        </div>
-      </div>
+        }
+      />
 
-      {/* View */}
-      {viewMode === "list" ? (
-        <IssueListView projectId={projectId} workspaceId={workspaceId} />
-      ) : (
-        <IssueBoardView projectId={projectId} workspaceId={workspaceId} />
-      )}
+      <div className="px-6 pt-5">
+        {viewMode === "list" ? (
+          <IssueListView projectId={projectId} workspaceId={workspaceId} />
+        ) : (
+          <IssueBoardView projectId={projectId} workspaceId={workspaceId} />
+        )}
+      </div>
     </div>
   );
 }

@@ -1,35 +1,33 @@
 import "../lib/orpc/client.server"; // for pre-rendering ORPC client
 
+import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import TanstackQueryProvider from "@/lib/tanstack-query/provider";
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono, Syne } from "next/font/google";
+import { Archivo, JetBrains_Mono } from "next/font/google";
 import NextTopLoader from "nextjs-toploader";
 
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const archivo = Archivo({
+  variable: "--font-archivo",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
-});
-
-const syne = Syne({
-  variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["600", "700", "800"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
   title: {
-    template: "%s - NextJS Template",
-    default: "NextJS Template",
+    template: "%s — Trackr",
+    default: "Trackr — work charted from backlog to done",
   },
-  description: "NextJS Template",
+  description:
+    "Trackr charts every issue, owner and status in one workspace so your team can see what is moving and what is waiting.",
 };
 
 export default function RootLayout({
@@ -38,18 +36,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
-        suppressHydrationWarning
-        className={`${inter.variable} ${jetbrainsMono.variable} ${syne.variable} font-sans antialiased`}
+        className={`${archivo.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
-        <NextTopLoader />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem={false}
+          disableTransitionOnChange
+        >
+          <NextTopLoader color="#C0327B" showSpinner={false} height={2} />
 
-        <TanstackQueryProvider>
-          <main className="min-h-dvh">{children}</main>
+          <TanstackQueryProvider>
+            <main className="min-h-dvh">{children}</main>
 
-          <Toaster position="top-right" richColors closeButton theme="light" />
-        </TanstackQueryProvider>
+            <Toaster position="top-right" richColors closeButton />
+          </TanstackQueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

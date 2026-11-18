@@ -1,10 +1,4 @@
-import {
-  AlertCircleIcon,
-  ArrowDownIcon,
-  ArrowUpIcon,
-  EqualIcon,
-  MinusIcon,
-} from "lucide-react";
+import { AlertCircleIcon, MinusIcon } from "lucide-react";
 import type { IssuePriority } from "../types";
 
 interface IssuePriorityBadgeProps {
@@ -12,55 +6,28 @@ interface IssuePriorityBadgeProps {
   className?: string;
 }
 
+/**
+ * Priority is a measurement, not a colour: four ticks in ascending height.
+ * Urgent replaces the ticks with a conflict mark, the way a chart marks the
+ * one obstruction you must not fly into.
+ */
 const priorityConfig: Record<
   IssuePriority,
   {
     label: string;
-    icon: typeof MinusIcon;
-    badgeClass: string;
-    iconClass: string;
+    level: number;
+    tone: string;
   }
 > = {
-  urgent: {
-    label: "Urgent",
-    icon: AlertCircleIcon,
-    badgeClass:
-      "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800",
-    iconClass: "text-red-600",
-  },
-  high: {
-    label: "High",
-    icon: ArrowUpIcon,
-    badgeClass:
-      "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-300 dark:border-orange-800",
-    iconClass: "text-orange-600",
-  },
-  medium: {
-    label: "Medium",
-    icon: EqualIcon,
-    badgeClass:
-      "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800",
-    iconClass: "text-amber-600",
-  },
-  low: {
-    label: "Low",
-    icon: ArrowDownIcon,
-    badgeClass:
-      "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800",
-    iconClass: "text-blue-600",
-  },
-  no_priority: {
-    label: "No priority",
-    icon: MinusIcon,
-    badgeClass:
-      "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700",
-    iconClass: "text-slate-400",
-  },
+  urgent: { label: "Urgent", level: 4, tone: "text-priority-urgent" },
+  high: { label: "High", level: 3, tone: "text-priority-high" },
+  medium: { label: "Medium", level: 2, tone: "text-priority-medium" },
+  low: { label: "Low", level: 1, tone: "text-priority-low" },
+  no_priority: { label: "No priority", level: 0, tone: "text-priority-none" },
 };
 
-/**
- * Standard visual indicator badge for issue priority levels.
- */
+const tickHeights = ["h-1", "h-1.5", "h-2", "h-2.5"];
+
 export function IssuePriorityBadge({
   priority,
   className,
@@ -70,19 +37,40 @@ export function IssuePriorityBadge({
       ? priorityConfig[priority as IssuePriority]
       : {
           label: priority,
-          icon: MinusIcon,
-          badgeClass: "bg-slate-100 text-slate-600 border-slate-200",
-          iconClass: "text-slate-400",
+          level: 0,
+          tone: "text-priority-none",
         };
-
-  const IconComponent = config.icon;
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium ${config.badgeClass} ${className ?? ""}`}
+      className={`inline-flex items-center gap-1.5 text-[11px] leading-none font-medium tracking-wide whitespace-nowrap ${config.tone} ${className ?? ""}`}
+      title={`Priority: ${config.label}`}
     >
-      <IconComponent className={`size-3.5 ${config.iconClass}`} />
+      {config.level === 0 ? (
+        <MinusIcon className="size-3" aria-hidden />
+      ) : (
+        <span className="flex items-end gap-[2px]" aria-hidden>
+          {tickHeights.map((height, index) => (
+            <span
+              key={height}
+              className={`w-[2px] rounded-[1px] ${height} ${
+                index < config.level ? "bg-current" : "bg-current/25"
+              }`}
+            />
+          ))}
+        </span>
+      )}
       <span>{config.label}</span>
     </span>
+  );
+}
+
+/** Conflict mark for urgent, reused where a single glyph is needed. */
+export function PriorityConflictIcon({ className }: { className?: string }) {
+  return (
+    <AlertCircleIcon
+      className={`text-priority-urgent size-3 ${className ?? ""}`}
+      aria-hidden
+    />
   );
 }

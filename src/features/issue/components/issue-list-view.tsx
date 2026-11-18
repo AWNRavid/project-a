@@ -55,22 +55,19 @@ export function IssueListView({
 
   if (issuesError) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-lg border border-rose-200 bg-rose-50 p-6 text-center text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300">
-        <AlertCircleIcon className="mb-2 size-8 text-rose-600 dark:text-rose-400" />
-        <h3 className="text-sm font-semibold">Failed to load issues</h3>
-        <p className="mt-1 max-w-sm text-xs text-rose-700 dark:text-rose-400">
-          {issuesError instanceof Error
-            ? issuesError.message
-            : "An unexpected error occurred while loading project issues."}
-        </p>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => refetchIssues()}
-          className="mt-4 border-rose-300 bg-white hover:bg-rose-100 dark:border-rose-800 dark:bg-slate-900"
-        >
+      <div className="border-destructive/40 bg-destructive/8 flex flex-col items-start gap-3 rounded-[3px] border p-6">
+        <AlertCircleIcon className="text-destructive size-5" />
+        <div>
+          <h3 className="text-[14px] font-semibold">Issues did not load</h3>
+          <p className="text-muted-foreground mt-1 max-w-prose text-[12px]">
+            {issuesError instanceof Error
+              ? issuesError.message
+              : "An unexpected error occurred while loading project issues."}
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => refetchIssues()}>
           <RefreshCwIcon className="mr-1.5 size-3.5" />
-          Retry
+          Try again
         </Button>
       </div>
     );

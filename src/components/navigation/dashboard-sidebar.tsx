@@ -5,7 +5,7 @@
 import { SideHeader } from "@/components/navigation/side-header";
 import { SideNav, type SidebarItem } from "@/components/navigation/side-nav";
 import { Sidebar, SidebarContent, SidebarRail } from "@/components/ui/sidebar";
-import { BoxIcon, HomeIcon, SettingsIcon } from "lucide-react";
+import { FolderKanbanIcon, Settings2Icon } from "lucide-react";
 import * as React from "react";
 
 export function DashboardSidebar({
@@ -15,22 +15,18 @@ export function DashboardSidebar({
   // workspace name/logo editor lives under /dashboard/settings.
   const navItems: SidebarItem[] = [
     {
-      label: "Dashboard",
+      label: "Workspace",
       items: [
         {
-          title: "Dashboard",
+          title: "Projects",
           url: "/dashboard",
-          icon: HomeIcon,
+          icon: FolderKanbanIcon,
+          activeMatch: "exact",
         },
         {
           title: "Settings",
           url: "/dashboard/settings",
-          icon: SettingsIcon,
-        },
-        {
-          title: "Posts example",
-          url: "/dashboard/posts",
-          icon: BoxIcon,
+          icon: Settings2Icon,
         },
       ],
     },
