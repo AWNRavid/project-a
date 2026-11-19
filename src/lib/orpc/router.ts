@@ -7,6 +7,7 @@ import attachmentRouter from "@/features/attachment/routes";
 import commentRouter from "@/features/comment/routes";
 import postRouter from "@/features/EXAMPLE-post/routes";
 import issueRouter from "@/features/issue/routes";
+import labelRouter from "@/features/label/routes";
 import projectRouter from "@/features/project/routes";
 // Workspace routes (create/list/update) added for the workspace
 // feature.
@@ -17,6 +18,7 @@ export const router = {
   workspace: workspaceRouter,
   project: projectRouter,
   issue: issueRouter,
+  label: labelRouter,
   comment: commentRouter,
   attachment: attachmentRouter,
   activity: activityRouter,

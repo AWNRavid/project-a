@@ -1,6 +1,7 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { LabelBadge } from "@/features/label/components/label-badge";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { GripVerticalIcon } from "lucide-react";
 import type { IssueDetail, IssuePriority, IssueStatus } from "../types";
@@ -95,6 +96,19 @@ export function BoardIssueCard({
           >
             {issue.title}
           </button>
+
+          {issue.labels.length > 0 && (
+            <div className="mt-1.5 flex flex-wrap items-center gap-1">
+              {issue.labels.slice(0, 2).map((label) => (
+                <LabelBadge key={label.id} label={label} />
+              ))}
+              {issue.labels.length > 2 && (
+                <span className="text-muted-foreground text-[11px]">
+                  +{issue.labels.length - 2}
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Footer: priority + assignee */}
           <div className="mt-2 flex items-center justify-between gap-2">

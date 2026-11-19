@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { IssueActivitySection } from "@/features/activity/components/issue-activity-section";
 import { IssueAttachmentsSection } from "@/features/attachment/components/issue-attachments-section";
 import { IssueCommentsSection } from "@/features/comment/components/issue-comments-section";
+import { IssueLabelsSection } from "@/features/label/components/issue-labels-section";
 import { CalendarIcon, EditIcon, Trash2Icon, UserIcon } from "lucide-react";
 import type { IssueDetail } from "../types";
 import { IssuePriorityBadge } from "./issue-priority-badge";
@@ -140,6 +141,11 @@ export function IssueDetailDialog({
               </p>
             </div>
           </div>
+
+          <Separator />
+
+          {/* Workspace labels attached to this issue. */}
+          <IssueLabelsSection key={issue.id} issue={issue} />
 
           <Separator />
 

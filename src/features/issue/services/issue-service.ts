@@ -1,15 +1,18 @@
 import { db } from "@/db/drizzle/connection";
 import {
+  issueLabelTable,
   issueTable,
+  labelTable,
   projectTable,
   userTable,
   workspaceMemberTable,
 } from "@/db/drizzle/schema";
 import { buildIssueChangeEvents } from "@/features/activity/services/activity-diff";
 import { recordActivities } from "@/features/activity/services/activity-service";
+import type { IssueLabelSummary } from "@/features/label/types";
 import { requireWorkspaceRole } from "@/features/workspace/utils/workspace-access";
 import { ORPCError } from "@orpc/server";
-import { and, asc, eq, ilike, sql } from "drizzle-orm";
+import { and, asc, eq, ilike, inArray, sql } from "drizzle-orm";
 import type {
   CreateIssueInput,
   GetAllIssuesInput,
@@ -17,6 +20,40 @@ import type {
   IssueDetail,
   UpdateIssueInput,
 } from "../types";
+
+/**
+ * Loads labels for a batch of issues in one query. Returning a map
+ * keeps listIssues from issuing N+1 queries for the table/board.
+ */
+async function loadLabelsByIssue(
+  issueIds: string[],
+): Promise<Map<string, IssueLabelSummary[]>> {
+  const labelsByIssue = new Map<string, IssueLabelSummary[]>();
+
+  if (issueIds.length === 0) {
+    return labelsByIssue;
+  }
+
+  const rows = await db
+    .select({
+      issueId: issueLabelTable.issueId,
+      id: labelTable.id,
+      name: labelTable.name,
+      color: labelTable.color,
+    })
+    .from(issueLabelTable)
+    .innerJoin(labelTable, eq(issueLabelTable.labelId, labelTable.id))
+    .where(inArray(issueLabelTable.issueId, issueIds))
+    .orderBy(asc(labelTable.name));
+
+  for (const row of rows) {
+    const labels = labelsByIssue.get(row.issueId) ?? [];
+    labels.push({ id: row.id, name: row.name, color: row.color });
+    labelsByIssue.set(row.issueId, labels);
+  }
+
+  return labelsByIssue;
+}
 
 /**
  * Service encapsulating business logic, domain constraints, authorization, and data access for Issues.
@@ -188,7 +225,9 @@ export class IssueService {
       "owner",
     ]);
 
-    return issue;
+    const labelsByIssue = await loadLabelsByIssue([issue.id]);
+
+    return { ...issue, labels: labelsByIssue.get(issue.id) ?? [] };
   }
 
   /**
@@ -268,7 +307,14 @@ export class IssueService {
       .limit(input.limit)
       .offset(input.offset);
 
-    return issues;
+    const labelsByIssue = await loadLabelsByIssue(
+      issues.map((issue) => issue.id),
+    );
+
+    return issues.map((issue) => ({
+      ...issue,
+      labels: labelsByIssue.get(issue.id) ?? [],
+    }));
   }
 
   /**
