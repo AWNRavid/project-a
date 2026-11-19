@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LabelBadge } from "@/features/label/components/label-badge";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { fuzzyFilter } from "@/lib/table/fuzzy-filter";
 import {
@@ -242,6 +243,18 @@ export function IssueTable({
             {row.original.description && (
               <span className="text-muted-foreground truncate text-xs">
                 {row.original.description}
+              </span>
+            )}
+            {row.original.labels.length > 0 && (
+              <span className="mt-1 flex flex-wrap items-center gap-1">
+                {row.original.labels.slice(0, 3).map((label) => (
+                  <LabelBadge key={label.id} label={label} />
+                ))}
+                {row.original.labels.length > 3 && (
+                  <span className="text-muted-foreground text-[11px]">
+                    +{row.original.labels.length - 3}
+                  </span>
+                )}
               </span>
             )}
             {/* Below sm the status and priority columns scroll off-screen;

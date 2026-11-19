@@ -8,6 +8,7 @@
     "start": "next start",
     "check": "pnpm typecheck && pnpm lint",
     "test:activity": "tsx --test src/features/activity/services/activity-diff.test.ts",
+    "test:label": "tsx --test src/features/label/services/label-diff.test.ts",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint && eslint",
     "format": "prettier --write src",

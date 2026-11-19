@@ -1,4 +1,5 @@
 import type { issueTable } from "@/db/drizzle/schema";
+import type { IssueLabelSummary } from "@/features/label/types";
 import type { z } from "zod";
 import type {
   createIssueSchema,
@@ -45,6 +46,7 @@ export interface IssueDetail {
   assigneeName: string | null;
   assigneeEmail: string | null;
   assigneeImage: string | null;
+  labels: IssueLabelSummary[];
   createdById: string;
   createdAt: Date;
   updatedAt: Date;

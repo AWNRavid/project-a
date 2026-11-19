@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 // Tabs for the Members / Pending invites switch.
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LabelSettings } from "@/features/label/components/label-settings";
 import { InviteMemberDialog } from "@/features/workspace/components/invite-member-dialog";
 import { MembersList } from "@/features/workspace/components/members-list";
 import { PendingInvitesList } from "@/features/workspace/components/pending-invites-list";
@@ -112,6 +113,9 @@ export function WorkspaceSettings() {
           </Tabs>
         </div>
       </div>
+
+      {/* Workspace-wide labels shared by every project. */}
+      <LabelSettings workspaceId={workspace.id} />
 
       {/* Owner-only destructive block, hidden from the UI for
           non-owners (the delete route re-checks ownership anyway). */}

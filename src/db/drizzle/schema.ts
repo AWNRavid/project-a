@@ -4,6 +4,7 @@ import {
   index,
   integer,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -343,9 +344,73 @@ export const issueRelations = relations(issueTable, ({ one, many }) => ({
     fields: [issueTable.createdById],
     references: [userTable.id],
   }),
+  labels: many(issueLabelTable),
   comments: many(commentTable),
   attachments: many(attachmentTable),
   activities: many(activityTable),
+}));
+
+// Workspace-scoped labels. Every project in the workspace shares the
+// same label set, matching the "workspace-wide" design decision.
+export const labelTable = pgTable(
+  "label",
+  {
+    id: uuid("id").primaryKey().$defaultFn(uuidv7),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaceTable.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    // Hex color used for the label's swatch in every surface.
+    color: text("color").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    uniqueIndex("label_workspace_name_idx").on(table.workspaceId, table.name),
+    index("label_workspace_id_idx").on(table.workspaceId),
+  ],
+);
+
+// Many-to-many link between issues and labels. The composite primary
+// key makes attaching the same label twice impossible.
+export const issueLabelTable = pgTable(
+  "issue_label",
+  {
+    issueId: uuid("issue_id")
+      .notNull()
+      .references(() => issueTable.id, { onDelete: "cascade" }),
+    labelId: uuid("label_id")
+      .notNull()
+      .references(() => labelTable.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.issueId, table.labelId] }),
+    index("issue_label_label_id_idx").on(table.labelId),
+  ],
+);
+
+export const labelRelations = relations(labelTable, ({ one, many }) => ({
+  workspace: one(workspaceTable, {
+    fields: [labelTable.workspaceId],
+    references: [workspaceTable.id],
+  }),
+  issues: many(issueLabelTable),
+}));
+
+export const issueLabelRelations = relations(issueLabelTable, ({ one }) => ({
+  issue: one(issueTable, {
+    fields: [issueLabelTable.issueId],
+    references: [issueTable.id],
+  }),
+  label: one(labelTable, {
+    fields: [issueLabelTable.labelId],
+    references: [labelTable.id],
+  }),
 }));
 
 export const commentTable = pgTable(
