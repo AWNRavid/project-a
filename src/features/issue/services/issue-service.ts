@@ -10,6 +10,8 @@ import {
 import { buildIssueChangeEvents } from "@/features/activity/services/activity-diff";
 import { recordActivities } from "@/features/activity/services/activity-service";
 import type { IssueLabelSummary } from "@/features/label/types";
+import { toIssueNotificationDrafts } from "@/features/notification/services/notification-diff";
+import { recordIssueNotifications } from "@/features/notification/services/notification-service";
 import { requireWorkspaceRole } from "@/features/workspace/utils/workspace-access";
 import { ORPCError } from "@orpc/server";
 import { and, asc, eq, ilike, inArray, sql } from "drizzle-orm";
@@ -109,6 +111,7 @@ export class IssueService {
     ]);
 
     // 3. Verify assignee belongs to the same workspace if provided.
+    let assigneeName: string | null = null;
     if (input.assigneeId) {
       const assignee = await this.getWorkspaceMember(
         input.assigneeId,
@@ -119,6 +122,7 @@ export class IssueService {
           message: "Assignee must be an active member of this workspace",
         });
       }
+      assigneeName = assignee.name;
     }
 
     // 4. Atomically compute sequential issue number within a transaction.
@@ -165,6 +169,13 @@ export class IssueService {
       await recordActivities(tx, created.id, userId, [
         { type: "issue_created", payload: { title: created.title } },
       ]);
+
+      // Creating an issue with an assignee is also an assignment.
+      if (input.assigneeId) {
+        await recordIssueNotifications(tx, created.id, userId, [
+          { type: "issue_assigned", payload: { to: assigneeName } },
+        ]);
+      }
 
       return created;
     });
@@ -390,6 +401,13 @@ export class IssueService {
       });
 
       await recordActivities(tx, issueId, userId, events);
+
+      await recordIssueNotifications(
+        tx,
+        issueId,
+        userId,
+        toIssueNotificationDrafts(events, Boolean(input.assigneeId)),
+      );
 
       return updated;
     });

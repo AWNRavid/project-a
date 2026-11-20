@@ -13,11 +13,15 @@ import { useState } from "react";
 
 interface ProjectViewProps {
   projectId: string;
+  initialIssueId?: string | null;
 }
 
 type ViewMode = "list" | "board";
 
-export function ProjectView({ projectId }: ProjectViewProps) {
+export function ProjectView({
+  projectId,
+  initialIssueId,
+}: ProjectViewProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   const { data: workspaceData } = useQuery(
@@ -135,7 +139,11 @@ export function ProjectView({ projectId }: ProjectViewProps) {
 
       <div className="px-6 pt-5">
         {viewMode === "list" ? (
-          <IssueListView projectId={projectId} workspaceId={workspaceId} />
+          <IssueListView
+            projectId={projectId}
+            workspaceId={workspaceId}
+            initialIssueId={initialIssueId}
+          />
         ) : (
           <IssueBoardView projectId={projectId} workspaceId={workspaceId} />
         )}

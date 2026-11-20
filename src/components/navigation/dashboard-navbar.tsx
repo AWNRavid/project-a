@@ -2,6 +2,7 @@
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { NotificationBell } from "@/features/notification/components/notification-bell";
 import { UserDropdown } from "./user-dropdown";
 
 /**
@@ -20,6 +21,7 @@ export function DashboardNavbar() {
         </div>
 
         <div className="flex items-center gap-1">
+          <NotificationBell />
           <ThemeToggle />
           <span className="bg-border mx-1 h-5 w-px" aria-hidden />
           <UserDropdown />

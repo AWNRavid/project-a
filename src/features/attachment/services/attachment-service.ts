@@ -6,6 +6,7 @@ import {
   userTable,
 } from "@/db/drizzle/schema";
 import { recordActivities } from "@/features/activity/services/activity-service";
+import { recordIssueNotifications } from "@/features/notification/services/notification-service";
 import { requireWorkspaceRole } from "@/features/workspace/utils/workspace-access";
 import {
   deleteFile,
@@ -124,6 +125,13 @@ export class AttachmentService {
         }
 
         await recordActivities(tx, input.issueId, userId, [
+          {
+            type: "attachment_added",
+            payload: { filename: row.filename },
+          },
+        ]);
+
+        await recordIssueNotifications(tx, input.issueId, userId, [
           {
             type: "attachment_added",
             payload: { filename: row.filename },

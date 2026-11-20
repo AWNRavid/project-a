@@ -51,7 +51,9 @@ import {
   Trash2Icon,
   XIcon,
 } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { IssueDetail, IssuePriority, IssueStatus } from "../types";
 import { CreateIssueDialog } from "./create-issue-dialog";
 import { DeleteIssueDialog } from "./delete-issue-dialog";
@@ -75,6 +77,8 @@ interface IssueTableProps {
   issues: IssueDetail[];
   isLoading: boolean;
   members?: WorkspaceMemberSummary[];
+  // Issue to open on mount, used by notification deep links.
+  initialIssueId?: string | null;
 }
 
 /**
@@ -108,8 +112,12 @@ export function IssueTable({
   issues,
   isLoading,
   members = [],
+  initialIssueId,
 }: IssueTableProps) {
   "use no memo";
+
+  const router = useRouter();
+  const pathname = usePathname();
 
   // Filtering states
   const [search, setSearch] = useState("");
@@ -135,6 +143,18 @@ export function IssueTable({
     useState<IssueDetail | null>(null);
   const [selectedIssueForDelete, setSelectedIssueForDelete] =
     useState<IssueDetail | null>(null);
+
+  // Deep link from a notification: open the issue once it is loaded.
+  const [openedInitialIssue, setOpenedInitialIssue] = useState(false);
+  useEffect(() => {
+    if (openedInitialIssue || !initialIssueId) return;
+
+    const issue = issues.find((item) => item.id === initialIssueId);
+    if (!issue) return;
+
+    setSelectedIssueForDetail(issue);
+    setOpenedInitialIssue(true);
+  }, [initialIssueId, issues, openedInitialIssue]);
 
   // Filtered dataset
   const filteredData = useMemo(() => {
@@ -816,7 +836,14 @@ export function IssueTable({
         issue={selectedIssueForDetail}
         open={Boolean(selectedIssueForDetail)}
         onOpenChange={(open) => {
-          if (!open) setSelectedIssueForDetail(null);
+          if (!open) {
+            setSelectedIssueForDetail(null);
+            // Drop the notification deep-link param so a refresh does
+            // not reopen the dialog.
+            if (initialIssueId) {
+              router.replace(pathname);
+            }
+          }
         }}
         onEdit={(issue) => {
           setSelectedIssueForEdit(issue);
