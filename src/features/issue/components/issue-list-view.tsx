@@ -9,6 +9,7 @@ import { IssueTable } from "./issue-table";
 interface IssueListViewProps {
   projectId: string;
   workspaceId?: string;
+  initialIssueId?: string | null;
 }
 
 /**
@@ -17,6 +18,7 @@ interface IssueListViewProps {
 export function IssueListView({
   projectId,
   workspaceId: initialWorkspaceId,
+  initialIssueId,
 }: IssueListViewProps) {
   // If workspaceId is not explicitly provided, resolve it from the active workspace.
   const { data: workspaceData } = useQuery({
@@ -81,6 +83,7 @@ export function IssueListView({
         issues={issues ?? []}
         isLoading={isIssuesLoading}
         members={membersData?.members ?? []}
+        initialIssueId={initialIssueId}
       />
     </div>
   );

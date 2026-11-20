@@ -98,6 +98,12 @@ export const userRelations = relations(userTable, ({ many }) => ({
   comments: many(commentTable),
   attachments: many(attachmentTable),
   activities: many(activityTable),
+  notifications: many(notificationTable, {
+    relationName: "notificationRecipient",
+  }),
+  triggeredNotifications: many(notificationTable, {
+    relationName: "notificationActor",
+  }),
 }));
 
 export const sessionRelations = relations(sessionTable, ({ one }) => ({
@@ -348,6 +354,7 @@ export const issueRelations = relations(issueTable, ({ one, many }) => ({
   comments: many(commentTable),
   attachments: many(attachmentTable),
   activities: many(activityTable),
+  notifications: many(notificationTable),
 }));
 
 // Workspace-scoped labels. Every project in the workspace shares the
@@ -529,6 +536,65 @@ export const activityRelations = relations(activityTable, ({ one }) => ({
     references: [userTable.id],
   }),
 }));
+
+// One row per user-event pair. Rows are written in the same transaction
+// as the change that caused them, and cascade away with their issue.
+export const notificationTable = pgTable(
+  "notification",
+  {
+    id: uuid("id").primaryKey().$defaultFn(uuidv7),
+    // Recipient. Deleting the user removes their inbox.
+    userId: text("user_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    // Who caused the event; shown as "Alice assigned you".
+    actorId: text("actor_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    issueId: uuid("issue_id")
+      .notNull()
+      .references(() => issueTable.id, { onDelete: "cascade" }),
+    // Event name, e.g. "issue_assigned". Parsed into a typed union at
+    // the service boundary.
+    type: text("type").notNull(),
+    // JSON text with display details, e.g. {"from":"todo","to":"done"}.
+    payload: text("payload").notNull().default("{}"),
+    // Null means unread; set by the recipient.
+    readAt: timestamp("read_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    // Inbox query: one user's newest notifications.
+    index("notification_user_created_idx").on(
+      table.userId,
+      table.createdAt,
+    ),
+    // Unread badge count.
+    index("notification_user_read_idx").on(table.userId, table.readAt),
+  ],
+);
+
+export const notificationRelations = relations(
+  notificationTable,
+  ({ one }) => ({
+    recipient: one(userTable, {
+      fields: [notificationTable.userId],
+      references: [userTable.id],
+      relationName: "notificationRecipient",
+    }),
+    actor: one(userTable, {
+      fields: [notificationTable.actorId],
+      references: [userTable.id],
+      relationName: "notificationActor",
+    }),
+    issue: one(issueTable, {
+      fields: [notificationTable.issueId],
+      references: [issueTable.id],
+    }),
+  }),
+);
 
 // export const userRelations = relations(userTable, ({ many }) => ({
 //   sessions: many(sessionTable),

@@ -6,6 +6,7 @@ import {
   userTable,
 } from "@/db/drizzle/schema";
 import { recordActivities } from "@/features/activity/services/activity-service";
+import { recordIssueNotifications } from "@/features/notification/services/notification-service";
 import { requireWorkspaceRole } from "@/features/workspace/utils/workspace-access";
 import { ORPCError } from "@orpc/server";
 import { asc, eq } from "drizzle-orm";
@@ -63,6 +64,10 @@ export class CommentService {
       }
 
       await recordActivities(tx, input.issueId, userId, [
+        { type: "comment_added", payload: {} },
+      ]);
+
+      await recordIssueNotifications(tx, input.issueId, userId, [
         { type: "comment_added", payload: {} },
       ]);
 

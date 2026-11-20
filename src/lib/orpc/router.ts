@@ -8,6 +8,7 @@ import commentRouter from "@/features/comment/routes";
 import postRouter from "@/features/EXAMPLE-post/routes";
 import issueRouter from "@/features/issue/routes";
 import labelRouter from "@/features/label/routes";
+import notificationRouter from "@/features/notification/routes";
 import projectRouter from "@/features/project/routes";
 // Workspace routes (create/list/update) added for the workspace
 // feature.
@@ -22,6 +23,7 @@ export const router = {
   comment: commentRouter,
   attachment: attachmentRouter,
   activity: activityRouter,
+  notification: notificationRouter,
 };
 
 // Type export used by clients (React components) and the server-side
