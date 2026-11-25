@@ -1,4 +1,3 @@
-// src/features/project/routes/delete-project.ts
 import { db } from "@/db/drizzle/connection";
 import { projectTable } from "@/db/drizzle/schema";
 import { requireWorkspaceRole } from "@/features/workspace/utils/workspace-access";
@@ -9,27 +8,27 @@ import { eq } from "drizzle-orm";
 import z from "zod";
 
 export const deleteProject = authProcedure
-  .input(z.object({ projectId: z.string().uuid() }))
+  .input(z.object({ projectId: z.uuid() }))
   .handler(async ({ input, context }) => {
     const user = requireUser(context.user);
 
-    // 1. Fetch project to identify its workspace
+    // Fetch the project first to learn its workspace, so the role
+    // check runs against the workspace that actually owns it.
     const [project] = await db
       .select({ id: projectTable.id, workspaceId: projectTable.workspaceId })
       .from(projectTable)
-      .where(eq(projectTable.id, input.projectId));
+      .where(eq(projectTable.id, input.projectId))
+      .limit(1);
 
     if (!project) {
       throw new ORPCError("NOT_FOUND", { message: "Project not found" });
     }
 
-    // 2. Ensure caller has permission in this workspace
     await requireWorkspaceRole(user.id, project.workspaceId, [
       "owner",
       "admin",
     ]);
 
-    // 3. Delete verified record
     const [deleted] = await db
       .delete(projectTable)
       .where(eq(projectTable.id, project.id))

@@ -1,22 +1,13 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { orpcTanstackQueryUtils } from "@/lib/orpc/client";
 import { useQuery } from "@tanstack/react-query";
-import {
-  ArrowUpRightIcon,
-  FolderIcon,
-  RefreshCwIcon,
-} from "lucide-react";
+import { ArrowUpRightIcon, FolderIcon, RefreshCwIcon } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { parseProjectStatus, projectStatusTone } from "../types";
 import { CreateProjectDialog } from "./create-project-dialog";
-
-const projectTone: Record<string, string> = {
-  active: "var(--status-todo)",
-  completed: "var(--status-done)",
-  archived: "var(--status-backlog)",
-};
 
 export function ProjectList() {
   const { data: workspaceData, isLoading: isWorkspaceLoading } = useQuery(
@@ -26,7 +17,7 @@ export function ProjectList() {
   const activeWorkspace = workspaceData?.workspaces[0];
 
   const {
-    data: projects,
+    data: projectData,
     isLoading: isProjectLoading,
     error,
     refetch,
@@ -40,6 +31,8 @@ export function ProjectList() {
   );
 
   const isLoading = isWorkspaceLoading || isProjectLoading;
+  const projects = projectData?.projects ?? [];
+  const total = projectData?.total ?? 0;
 
   if (isLoading) {
     return (
@@ -75,7 +68,7 @@ export function ProjectList() {
     );
   }
 
-  if (!projects || projects.length === 0) {
+  if (projects.length === 0) {
     return (
       <div className="border-border relative overflow-hidden rounded-[3px] border">
         <div className="graticule pointer-events-none absolute inset-0 opacity-60" />
@@ -84,7 +77,9 @@ export function ProjectList() {
             <FolderIcon className="text-muted-foreground size-4" />
           </span>
           <div>
-            <h2 className="text-[16px] font-semibold">No projects on the chart</h2>
+            <h2 className="text-[16px] font-semibold">
+              No projects on the chart
+            </h2>
             <p className="text-muted-foreground mt-1 max-w-[48ch] text-[13px] leading-relaxed">
               A project holds the issues, keys and board for one stream of work.
               Create the first one and its issues will appear here as a chart.
@@ -102,8 +97,7 @@ export function ProjectList() {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <p className="text-muted-foreground font-mono text-[11px] tracking-[0.14em] uppercase">
-          {projects.length} {projects.length === 1 ? "project" : "projects"} ·
-          newest first
+          {total} {total === 1 ? "project" : "projects"} · newest first
         </p>
         {activeWorkspace ? (
           <CreateProjectDialog workspaceId={activeWorkspace.id} />
@@ -112,13 +106,16 @@ export function ProjectList() {
 
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
         {projects.map((project) => {
-          const tone = projectTone[project.status] ?? "var(--muted-foreground)";
+          const status = parseProjectStatus(project.status);
+          const tone = status
+            ? projectStatusTone[status]
+            : "var(--muted-foreground)";
 
           return (
             <Link
               key={project.id}
               href={`/dashboard/project/${project.id}`}
-              className="strip group px-4 py-3.5 transition-colors hover:bg-muted/40"
+              className="strip group hover:bg-muted/40 px-4 py-3.5 transition-colors"
               style={{ "--strip-accent": tone } as React.CSSProperties}
             >
               <div className="flex items-center justify-between gap-3">
@@ -145,7 +142,7 @@ export function ProjectList() {
                 <span className="text-muted-foreground text-[11px]">
                   Open chart
                 </span>
-                <ArrowUpRightIcon className="text-muted-foreground group-hover:text-primary size-3.5 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                <ArrowUpRightIcon className="text-muted-foreground group-hover:text-primary size-3.5 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </div>
             </Link>
           );

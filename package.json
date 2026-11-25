@@ -9,6 +9,7 @@
     "check": "pnpm typecheck && pnpm lint",
     "test:activity": "tsx --test src/features/activity/services/activity-diff.test.ts",
     "test:label": "tsx --test src/features/label/services/label-diff.test.ts",
+    "test:project": "tsx --test src/features/project/project-key.test.ts",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint && eslint",
     "format": "prettier --write src",

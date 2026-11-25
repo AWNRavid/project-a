@@ -8,30 +8,15 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
-import { Form } from "@/components/ui/form";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { projectTable } from "@/db/drizzle/schema";
 import { orpcClient, orpcTanstackQueryUtils } from "@/lib/orpc/client";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Trash2Icon } from "lucide-react";
-import { useCallback, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { toast } from "sonner";
-import z from "zod";
-
-const deleteProjectSchema = z.object({
-  projectId: z.string().min(1, "Title is required"),
-});
-
-type deleteProjectFormValue = z.infer<typeof deleteProjectSchema>;
-
-type Project = typeof projectTable.$inferSelect;
+import type { Project } from "../types";
 
 export function DeleteProjectDialog({
   workspaceId,
@@ -41,29 +26,24 @@ export function DeleteProjectDialog({
   project: Project;
 }) {
   const [openDialog, setOpenDialog] = useState(false);
-
-  const form = useForm<deleteProjectFormValue>({
-    resolver: zodResolver(deleteProjectSchema),
-    defaultValues: {
-      projectId: "",
-    },
-  });
-
   const queryClient = useQueryClient();
+  const router = useRouter();
 
-  // src/features/project/components/delete-project-dialog.tsx
   const deleteProjectMutation = useMutation({
-    mutationFn: (projectId: string) => {
-      return orpcClient.project.deleteProject({ projectId });
+    mutationFn: () => {
+      return orpcClient.project.deleteProject({ projectId: project.id });
     },
     onSuccess: () => {
-      toast.success("Project deleted successfully");
+      toast.success("Project deleted");
       queryClient.invalidateQueries({
-        queryKey: orpcTanstackQueryUtils.project.getAllProject.queryOptions({
-          input: { workspaceId },
-        }).queryKey,
+        queryKey: orpcTanstackQueryUtils.project.getAllProject
+          .queryOptions({
+            input: { workspaceId },
+          })
+          .queryKey.slice(0, 2),
       });
       setOpenDialog(false);
+      router.push("/dashboard");
     },
     onError: (error) => {
       toast.error(
@@ -72,72 +52,43 @@ export function DeleteProjectDialog({
     },
   });
 
-  const handleDelete = () => {
-    deleteProjectMutation.mutate(project.id);
-  };
-
   const isPending = deleteProjectMutation.isPending;
 
-  const handleDeleteClick = useCallback(
-    (project: Project) => {
-      form.reset({
-        projectId: project.id,
-      });
-      setOpenDialog(true);
-    },
-    [form],
-  );
-
   return (
-    <div className="">
-      <Tooltip>
-        <TooltipTrigger asChild>
+    <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline">
+          <Trash2Icon className="size-3.5" />
+          Delete
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Delete project</DialogTitle>
+          <DialogDescription>
+            Delete &quot;{project.title}&quot; and all of its issues? This
+            cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
           <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              handleDeleteClick(project);
-            }}
-            className="text-blue-600 transition-transform hover:scale-105 hover:text-blue-700"
+            type="button"
+            variant="outline"
+            onClick={() => setOpenDialog(false)}
           >
-            <Trash2Icon className="h-4 w-4" />
-            Delete
+            Cancel
           </Button>
-        </TooltipTrigger>
-        <TooltipContent>Delete post</TooltipContent>
-      </Tooltip>
-
-      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold">
-              Delete Project
-            </DialogTitle>
-            <DialogDescription>Delete project.</DialogDescription>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleDelete)}>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant={"outline"}
-                  onClick={() => {
-                    setOpenDialog(false);
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isPending}>
-                  {isPending && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  {isPending ? "Loading..." : "Delete project"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-    </div>
+          <Button
+            type="button"
+            variant="destructive"
+            disabled={isPending}
+            onClick={() => deleteProjectMutation.mutate()}
+          >
+            {isPending && <Loader2 className="size-4 animate-spin" />}
+            {isPending ? "Deleting..." : "Delete project"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -30,5 +30,5 @@ export const listNotificationsSchema = z.object({
 });
 
 export const markNotificationReadSchema = z.object({
-  notificationId: z.string().uuid("Invalid notification ID"),
+  notificationId: z.uuid("Invalid notification ID"),
 });

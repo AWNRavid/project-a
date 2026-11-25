@@ -10,6 +10,9 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronRightIcon, KanbanIcon, ListIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { parseProjectStatus, projectStatusTone } from "../types";
+import { DeleteProjectDialog } from "./delete-project-dialog";
+import { EditProjectDialog } from "./edit-project-dialog";
 
 interface ProjectViewProps {
   projectId: string;
@@ -18,13 +21,14 @@ interface ProjectViewProps {
 
 type ViewMode = "list" | "board";
 
-export function ProjectView({
-  projectId,
-  initialIssueId,
-}: ProjectViewProps) {
+export function ProjectView({ projectId, initialIssueId }: ProjectViewProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
 
-  const { data: workspaceData } = useQuery(
+  const {
+    data: workspaceData,
+    isLoading: isWorkspaceLoading,
+    error: workspaceError,
+  } = useQuery(
     orpcTanstackQueryUtils.workspace.listWorkspaces.queryOptions({ input: {} }),
   );
 
@@ -32,8 +36,8 @@ export function ProjectView({
 
   const {
     data: project,
-    isLoading,
-    error,
+    isLoading: isProjectLoading,
+    error: projectError,
   } = useQuery(
     orpcTanstackQueryUtils.project.getProject.queryOptions({
       input: {
@@ -44,7 +48,10 @@ export function ProjectView({
     }),
   );
 
-  if (isLoading) {
+  // The project query stays disabled until the workspace arrives, so
+  // its own isLoading is false during that window; check both to avoid
+  // flashing "not found" before the first fetch starts.
+  if (isWorkspaceLoading || isProjectLoading) {
     return (
       <div className="px-6 pt-5">
         <Skeleton className="h-3 w-28" />
@@ -55,7 +62,7 @@ export function ProjectView({
     );
   }
 
-  if (error || !project) {
+  if (workspaceError || projectError || !project) {
     return (
       <div className="px-6 pt-10">
         <div className="border-border flex flex-col items-start gap-3 rounded-[3px] border p-6">
@@ -75,12 +82,9 @@ export function ProjectView({
   }
 
   const workspaceId = workspace?.id ?? project.workspaceId;
-  const tone =
-    project.status === "completed"
-      ? "var(--status-done)"
-      : project.status === "archived"
-        ? "var(--status-backlog)"
-        : "var(--status-todo)";
+  const canManage = workspace?.role === "admin" || workspace?.role === "owner";
+  const status = parseProjectStatus(project.status);
+  const tone = status ? projectStatusTone[status] : "var(--muted-foreground)";
 
   return (
     <div className="pb-8">
@@ -101,38 +105,54 @@ export function ProjectView({
               className="ml-1 text-[11px] font-semibold tracking-[0.1em] uppercase"
               style={{ color: tone }}
             >
-              {project.status}
+              {status ?? project.status}
             </span>
           </>
         }
         title={project.title}
-        description={project.description || "No description for this project yet."}
+        description={
+          project.description || "No description for this project yet."
+        }
         actions={
-          <div
-            className="border-border flex items-center gap-0.5 rounded-[3px] border p-0.5"
-            role="group"
-            aria-label="View mode"
-          >
-            <Button
-              variant={viewMode === "list" ? "secondary" : "ghost"}
-              size="sm"
-              className="h-7 gap-1.5 px-2 text-[12px]"
-              onClick={() => setViewMode("list")}
-              aria-pressed={viewMode === "list"}
+          <div className="flex items-center gap-2">
+            {canManage ? (
+              <>
+                <EditProjectDialog
+                  workspaceId={workspaceId}
+                  project={project}
+                />
+                <DeleteProjectDialog
+                  workspaceId={workspaceId}
+                  project={project}
+                />
+              </>
+            ) : null}
+            <div
+              className="border-border flex items-center gap-0.5 rounded-[3px] border p-0.5"
+              role="group"
+              aria-label="View mode"
             >
-              <ListIcon className="size-3.5" />
-              List
-            </Button>
-            <Button
-              variant={viewMode === "board" ? "secondary" : "ghost"}
-              size="sm"
-              className="h-7 gap-1.5 px-2 text-[12px]"
-              onClick={() => setViewMode("board")}
-              aria-pressed={viewMode === "board"}
-            >
-              <KanbanIcon className="size-3.5" />
-              Board
-            </Button>
+              <Button
+                variant={viewMode === "list" ? "secondary" : "ghost"}
+                size="sm"
+                className="h-7 gap-1.5 px-2 text-[12px]"
+                onClick={() => setViewMode("list")}
+                aria-pressed={viewMode === "list"}
+              >
+                <ListIcon className="size-3.5" />
+                List
+              </Button>
+              <Button
+                variant={viewMode === "board" ? "secondary" : "ghost"}
+                size="sm"
+                className="h-7 gap-1.5 px-2 text-[12px]"
+                onClick={() => setViewMode("board")}
+                aria-pressed={viewMode === "board"}
+              >
+                <KanbanIcon className="size-3.5" />
+                Board
+              </Button>
+            </div>
           </div>
         }
       />

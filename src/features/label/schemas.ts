@@ -29,17 +29,17 @@ export const createLabelSchema = z.object({
 });
 
 export const updateLabelSchema = z.object({
-  labelId: z.string().uuid("Invalid label ID"),
+  labelId: z.uuid("Invalid label ID"),
   name: labelNameSchema,
   color: labelColorSchema,
 });
 
 export const deleteLabelSchema = z.object({
-  labelId: z.string().uuid("Invalid label ID"),
+  labelId: z.uuid("Invalid label ID"),
 });
 
 export const setIssueLabelsSchema = z.object({
-  issueId: z.string().uuid("Invalid issue ID"),
+  issueId: z.uuid("Invalid issue ID"),
   // The complete desired set; the route replaces what the issue has.
-  labelIds: z.array(z.string().uuid("Invalid label ID")),
+  labelIds: z.array(z.uuid("Invalid label ID")),
 });

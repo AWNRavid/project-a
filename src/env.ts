@@ -14,7 +14,7 @@ export const env = createEnv({
     // "From" identity for outgoing emails, e.g. `Trackr <onboarding@resend.dev>`.
     EMAIL_FROM: z.string().min(1).default("Trackr <onboarding@resend.dev>"),
     // Public base URL used inside email links (e.g. invite buttons).
-    APP_URL: z.string().url().default("http://localhost:3000"),
+    APP_URL: z.url().default("http://localhost:3000"),
     LOG_LEVEL: z
       .enum(["fatal", "error", "warn", "info", "debug", "trace"])
       .optional(),

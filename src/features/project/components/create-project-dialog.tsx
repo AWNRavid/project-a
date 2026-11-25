@@ -19,52 +19,45 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { orpcClient, orpcTanstackQueryUtils } from "@/lib/orpc/client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, UserPlusIcon } from "lucide-react";
+import { FolderPlusIcon, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import z from "zod";
-import { projectStatusSchema } from "../types";
-
-const createProjectSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  description: z.string(),
-  status: projectStatusSchema,
-});
-
-type createProjectFormValue = z.infer<typeof createProjectSchema>;
+import { projectFormSchema, type ProjectFormValues } from "../schemas";
 
 export function CreateProjectDialog({ workspaceId }: { workspaceId: string }) {
   const [openDialog, setOpenDialog] = useState(false);
 
-  const form = useForm<createProjectFormValue>({
-    resolver: zodResolver(createProjectSchema),
+  const form = useForm<ProjectFormValues>({
+    resolver: zodResolver(projectFormSchema),
     defaultValues: {
       title: "",
       description: "",
-      status: "active",
     },
   });
 
   const queryClient = useQueryClient();
 
   const createProjectMutation = useMutation({
-    mutationFn: (data: createProjectFormValue) => {
+    mutationFn: (data: ProjectFormValues) => {
       return orpcClient.project.createProject({
         title: data.title,
-        description: data.description,
+        description: data.description || null,
         workspaceId,
       });
     },
     onSuccess: () => {
-      toast.success("Project created successfuly");
+      toast.success("Project created successfully");
       queryClient.invalidateQueries({
         queryKey: orpcTanstackQueryUtils.project.getAllProject
-          .queryOptions({ input: { workspaceId } })
-          .queryKey.slice(0, 3),
+          .queryOptions({
+            input: { workspaceId },
+          })
+          .queryKey.slice(0, 2),
       });
       form.reset();
       setOpenDialog(false);
@@ -76,36 +69,38 @@ export function CreateProjectDialog({ workspaceId }: { workspaceId: string }) {
     },
   });
 
-  const handleSubmit = (values: createProjectFormValue) => {
-    if (!workspaceId) {
-      toast.error("Workspace ID is missing");
-      return;
-    }
-    createProjectMutation.mutate(values);
-  };
-
   const isPending = createProjectMutation.isPending;
 
+  const handleOpenChange = (open: boolean) => {
+    // Clear a cancelled draft so the next open starts blank.
+    if (!open) {
+      form.reset();
+    }
+    setOpenDialog(open);
+  };
+
   return (
-    <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+    <Dialog open={openDialog} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button size="sm">
-          {/* Icon of intent; the label names the action. */}
-          <UserPlusIcon className="size-4" />
+          <FolderPlusIcon className="size-4" />
           Create new project
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">
-            Create New Project
-          </DialogTitle>
+          <DialogTitle>Create new project</DialogTitle>
           <DialogDescription>
-            Add a new project to your collection.
+            A project holds the issues and board for one stream of work.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)}>
+          <form
+            onSubmit={form.handleSubmit((values) =>
+              createProjectMutation.mutate(values),
+            )}
+            className="space-y-4"
+          >
             <FormField
               name="title"
               control={form.control}
@@ -116,7 +111,7 @@ export function CreateProjectDialog({ workspaceId }: { workspaceId: string }) {
                     <Input
                       {...field}
                       type="text"
-                      placeholder="Insert project title here"
+                      placeholder="e.g. Mobile app"
                     />
                   </FormControl>
                   <FormMessage />
@@ -130,27 +125,29 @@ export function CreateProjectDialog({ workspaceId }: { workspaceId: string }) {
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Input
+                    <Textarea
                       {...field}
-                      type="text"
-                      placeholder="Insert project description here"
+                      value={field.value ?? ""}
+                      rows={3}
+                      className="resize-none"
+                      placeholder="What is this project about?"
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <DialogFooter>
+            <DialogFooter className="mt-6">
               <Button
                 type="button"
-                variant={"outline"}
-                onClick={() => setOpenDialog(false)}
+                variant="outline"
+                onClick={() => handleOpenChange(false)}
               >
                 Cancel
               </Button>
               <Button type="submit" disabled={isPending}>
-                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isPending ? "Loading..." : "Create project"}
+                {isPending && <Loader2 className="size-4 animate-spin" />}
+                {isPending ? "Creating..." : "Create project"}
               </Button>
             </DialogFooter>
           </form>

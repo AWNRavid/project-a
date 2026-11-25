@@ -26,7 +26,7 @@ export const issuePrioritySchema = z.enum([
  * Validation schema for creating a new issue under a project.
  */
 export const createIssueSchema = z.object({
-  projectId: z.string().uuid("Invalid project ID"),
+  projectId: z.uuid("Invalid project ID"),
   title: z
     .string()
     .trim()
@@ -44,14 +44,14 @@ export const createIssueSchema = z.object({
  * Validation schema for retrieving a single issue by its unique identifier.
  */
 export const getIssueSchema = z.object({
-  issueId: z.string().uuid("Invalid issue ID"),
+  issueId: z.uuid("Invalid issue ID"),
 });
 
 /**
  * Validation schema for querying and filtering issues inside a project.
  */
 export const getAllIssuesSchema = z.object({
-  projectId: z.string().uuid("Invalid project ID"),
+  projectId: z.uuid("Invalid project ID"),
   status: issueStatusSchema.optional(),
   priority: issuePrioritySchema.optional(),
   assigneeId: z.string().optional(),
@@ -64,7 +64,7 @@ export const getAllIssuesSchema = z.object({
  * Validation schema for updating an existing issue. All mutable fields are optional.
  */
 export const updateIssueSchema = z.object({
-  issueId: z.string().uuid("Invalid issue ID"),
+  issueId: z.uuid("Invalid issue ID"),
   title: z
     .string()
     .trim()
@@ -83,5 +83,5 @@ export const updateIssueSchema = z.object({
  * Validation schema for deleting an issue by its ID.
  */
 export const deleteIssueSchema = z.object({
-  issueId: z.string().uuid("Invalid issue ID"),
+  issueId: z.uuid("Invalid issue ID"),
 });

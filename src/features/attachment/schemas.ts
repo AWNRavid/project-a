@@ -21,16 +21,16 @@ export const attachmentFileSchema = z
 
 // Upload needs the target issue and one file.
 export const uploadAttachmentSchema = z.object({
-  issueId: z.string().uuid("Invalid issue ID format"),
+  issueId: z.uuid("Invalid issue ID format"),
   file: attachmentFileSchema,
 });
 
 // Listing only needs the issue ID.
 export const getIssueAttachmentsSchema = z.object({
-  issueId: z.string().uuid("Invalid issue ID format"),
+  issueId: z.uuid("Invalid issue ID format"),
 });
 
 // Deleting needs the attachment ID.
 export const deleteAttachmentSchema = z.object({
-  attachmentId: z.string().uuid("Invalid attachment ID format"),
+  attachmentId: z.uuid("Invalid attachment ID format"),
 });

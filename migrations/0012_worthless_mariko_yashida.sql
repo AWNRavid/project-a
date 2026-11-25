@@ -1,0 +1,1 @@
+ALTER TABLE "project" DROP CONSTRAINT "project_key_unique";

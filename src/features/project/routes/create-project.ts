@@ -1,18 +1,15 @@
 import { db } from "@/db/drizzle/connection";
 import { projectTable } from "@/db/drizzle/schema";
+import {
+  isUniqueViolation,
+  MAX_KEY_ATTEMPTS,
+  projectKey,
+} from "@/features/project/project-key";
+import { createProjectSchema } from "@/features/project/schemas";
 import { requireWorkspaceRole } from "@/features/workspace/utils/workspace-access";
 import { authProcedure } from "@/lib/orpc/auth/auth-procedure";
 import { requireUser } from "@/lib/orpc/auth/require-user";
-import { customAlphabet } from "nanoid";
-import z from "zod";
-
-const createProjectSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  workspaceId: z.string().min(1, "Workspace ID is required"),
-  description: z.string().optional(),
-});
-
-const nanoid = customAlphabet("1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ", 4);
+import { ORPCError } from "@orpc/server";
 
 export const createProject = authProcedure
   .input(createProjectSchema)
@@ -25,21 +22,31 @@ export const createProject = authProcedure
       "owner",
     ]);
 
-    const cleanTitle = input.title.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-    const prefix = cleanTitle.slice(0, 3).padEnd(3, "X");
-    const projectKey = `${prefix}-${nanoid()}`; // e.g. "MOB-4F2A"
+    // The key suffix is random, so a collision is rare but possible;
+    // retry a few times instead of surfacing a 500 to the caller.
+    for (let attempt = 0; attempt < MAX_KEY_ATTEMPTS; attempt++) {
+      try {
+        const [project] = await db
+          .insert(projectTable)
+          .values({
+            title: input.title,
+            workspaceId: input.workspaceId,
+            createdById: user.id,
+            description: input.description || null,
+            key: projectKey(input.title),
+            status: "active",
+          })
+          .returning();
 
-    const [project] = await db
-      .insert(projectTable)
-      .values({
-        title: input.title,
-        workspaceId: input.workspaceId,
-        createdById: user.id,
-        description: input.description,
-        key: projectKey,
-        status: "active",
-      })
-      .returning();
+        return project;
+      } catch (error) {
+        if (!isUniqueViolation(error)) {
+          throw error;
+        }
+      }
+    }
 
-    return project;
+    throw new ORPCError("INTERNAL_SERVER_ERROR", {
+      message: "Could not generate a unique project key",
+    });
   });

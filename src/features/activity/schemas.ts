@@ -31,5 +31,5 @@ export const activityPayloadSchema = z.object({
  * Input for loading one issue's activity feed.
  */
 export const getIssueActivitiesSchema = z.object({
-  issueId: z.string().uuid("Invalid issue ID"),
+  issueId: z.uuid("Invalid issue ID"),
 });

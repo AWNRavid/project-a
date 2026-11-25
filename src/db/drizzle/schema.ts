@@ -261,7 +261,9 @@ export const projectTable = pgTable(
       .notNull()
       .references(() => userTable.id),
     status: text("status").default("active").notNull(),
-    key: text("key").notNull().unique(),
+    // Unique per workspace (index below), not globally: two workspaces
+    // may legitimately generate the same key.
+    key: text("key").notNull(),
   },
   (table) => [
     uniqueIndex("workspace_project_key_idx").on(table.workspaceId, table.key),
@@ -567,10 +569,7 @@ export const notificationTable = pgTable(
   },
   (table) => [
     // Inbox query: one user's newest notifications.
-    index("notification_user_created_idx").on(
-      table.userId,
-      table.createdAt,
-    ),
+    index("notification_user_created_idx").on(table.userId, table.createdAt),
     // Unread badge count.
     index("notification_user_read_idx").on(table.userId, table.readAt),
   ],

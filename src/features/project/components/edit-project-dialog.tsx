@@ -8,6 +8,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -19,27 +20,22 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { projectTable } from "@/db/drizzle/schema";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { orpcClient, orpcTanstackQueryUtils } from "@/lib/orpc/client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { EditIcon, Loader2 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import z from "zod";
-
-const editProjectSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-});
-
-type editProjectFormValue = z.infer<typeof editProjectSchema>;
-
-type Project = typeof projectTable.$inferSelect;
+import { editProjectFormSchema, type EditProjectFormValues } from "../schemas";
+import { parseProjectStatus, projectStatuses, type Project } from "../types";
 
 export function EditProjectDialog({
   workspaceId,
@@ -49,130 +45,157 @@ export function EditProjectDialog({
   project: Project;
 }) {
   const [openDialog, setOpenDialog] = useState(false);
-
-  const form = useForm<editProjectFormValue>({
-    resolver: zodResolver(editProjectSchema),
-    defaultValues: {
-      title: "",
-    },
-  });
-
   const queryClient = useQueryClient();
 
+  const savedValues: EditProjectFormValues = {
+    title: project.title,
+    description: project.description ?? "",
+    status: parseProjectStatus(project.status) ?? "active",
+  };
+
+  const form = useForm<EditProjectFormValues>({
+    resolver: zodResolver(editProjectFormSchema),
+    defaultValues: savedValues,
+  });
+
   const updateProjectMutation = useMutation({
-    mutationFn: (data: editProjectFormValue) => {
+    mutationFn: (data: EditProjectFormValues) => {
       return orpcClient.project.updateProject({
         title: data.title,
+        description: data.description || null,
+        status: data.status,
         projectId: project.id,
         workspaceId,
       });
     },
     onSuccess: () => {
-      toast.success("Project edited successfuly");
+      toast.success("Project updated successfully");
       queryClient.invalidateQueries({
         queryKey: orpcTanstackQueryUtils.project.getAllProject
-          .queryOptions({ input: { workspaceId } })
-          .queryKey.slice(0, 3),
+          .queryOptions({
+            input: { workspaceId },
+          })
+          .queryKey.slice(0, 2),
       });
-      form.reset();
+      queryClient.invalidateQueries({
+        queryKey: orpcTanstackQueryUtils.project.getProject.queryOptions({
+          input: { projectId: project.id, workspaceId },
+        }).queryKey,
+      });
       setOpenDialog(false);
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Failed to edit project",
+        error instanceof Error ? error.message : "Failed to update project",
       );
     },
   });
 
-  const handleSubmit = (values: editProjectFormValue) => {
-    if (!workspaceId) {
-      toast.error("Workspace ID is missing");
-      return;
-    }
-    updateProjectMutation.mutate(values);
-  };
-
   const isPending = updateProjectMutation.isPending;
 
-  const handleEditClick = useCallback(
-    (project: Project) => {
-      form.reset({
-        title: project.title,
-      });
-      setOpenDialog(true);
-    },
-    [form],
-  );
+  const handleOpenChange = (open: boolean) => {
+    // Start from the saved values every time so a cancelled edit does
+    // not linger into the next open.
+    if (open) {
+      form.reset(savedValues);
+    }
+    setOpenDialog(open);
+  };
 
   return (
-    <div className="">
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              handleEditClick(project);
-            }}
-            className="text-blue-600 transition-transform hover:scale-105 hover:text-blue-700"
+    <Dialog open={openDialog} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline">
+          <EditIcon className="size-3.5" />
+          Edit
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit project</DialogTitle>
+          <DialogDescription>
+            Update the title, description and status of this project.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit((values) =>
+              updateProjectMutation.mutate(values),
+            )}
+            className="space-y-4"
           >
-            <EditIcon className="h-4 w-4" />
-            Edit
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Edit post</TooltipContent>
-      </Tooltip>
-
-      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold">
-              Edit Project
-            </DialogTitle>
-            <DialogDescription>
-              Edit project title and description
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)}>
-              <FormField
-                name="title"
-                control={form.control}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Title</FormLabel>
+            <FormField
+              name="title"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Title</FormLabel>
+                  <FormControl>
+                    <Input {...field} type="text" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="description"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      value={field.value ?? ""}
+                      rows={3}
+                      className="resize-none"
+                      placeholder="What is this project about?"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="status"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
-                      <Input
-                        {...field}
-                        type="text"
-                        placeholder="Insert project title here"
-                      />
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant={"outline"}
-                  onClick={() => {
-                    setOpenDialog(false);
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isPending}>
-                  {isPending && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  {isPending ? "Loading..." : "Edit project"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-    </div>
+                    <SelectContent>
+                      {projectStatuses.map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {status}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <DialogFooter className="mt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleOpenChange(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isPending}>
+                {isPending && <Loader2 className="size-4 animate-spin" />}
+                {isPending ? "Saving..." : "Save changes"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 }
